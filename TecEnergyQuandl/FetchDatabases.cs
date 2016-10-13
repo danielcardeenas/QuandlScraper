@@ -14,21 +14,21 @@ using TecEnergyQuandl.Model;
 
 namespace TecEnergyQuandl
 {
-    class Program
+    public static class FetchDatabases
     {
         // Init databases list
         public static List<QuandlDatabase> databases = new List<QuandlDatabase>();
+
+        // Stuff to know
+        private static int pagesDownloaded = 0;
+        private static int pagesToDownload;
 
         static void Main(string[] args)
         {
             BeginDownloadDatabases();
             Console.ReadLine();
         }
-
-
-        /**
-         * 
-         */
+        
         private static void BeginDownloadDatabases()
         {
             using (WebClient client = new WebClient())
@@ -41,7 +41,9 @@ namespace TecEnergyQuandl
                 var databaseReponse = DownloadDatabase(1);
 
                 // To let user knows
-                PrintProgress("1A", "Fetching database: ", GetPercent(1, databaseReponse.Meta.TotalPages).ToString() + "%");
+                pagesToDownload = databaseReponse.Meta.TotalPages;
+                pagesDownloaded++;
+                Utils.ConsoleInformer.PrintProgress("1A", "Fetching databases: ", Utils.Helpers.GetPercent(1, databaseReponse.Meta.TotalPages).ToString() + "%");
 
                 // Save first database
                 databases.AddRange(databaseReponse.Databases);
@@ -76,35 +78,30 @@ namespace TecEnergyQuandl
             using (WebClient client = new WebClient())
             {
                 client.DownloadStringAsync(new Uri(Utils.Constants.DATABASES_URL + "?page=" + page + "&api_key=qsoHq8dWs24kyT8pEDSy"));
-                client.DownloadProgressChanged += (sender, e) =>
-                {
-
-                };
+                //client.DownloadProgressChanged += (sender, e) => {};
                 client.DownloadStringCompleted += (sender, e) =>
                 {
                     DatabasesResponse response =
                         JsonConvert.DeserializeObject<DatabasesResponse>(e.Result, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
-                    PrintProgress("1A", "Fetching database: ", GetPercent(page, response.Meta.TotalPages).ToString() + "%");
+                    Utils.ConsoleInformer.PrintProgress("1A", "Fetching databases: ", Utils.Helpers.GetPercent(page, response.Meta.TotalPages).ToString() + "%");
                     databases.AddRange(response.Databases);
+                    pagesDownloaded++;
+
+                    if (FinishedDownloading())
+                    {
+                        // Download Datasets
+                        Console.WriteLine("");
+                        Console.WriteLine("");
+                        FetchDatasets.BeginDownloadDatasets();
+                    }
                 };
             }
         }
 
-        private static void PrintProgress(string taskId, string title, string definition)
+        private static bool FinishedDownloading()
         {
-            Console.ForegroundColor = ConsoleColor.DarkMagenta;
-            Console.Write("{" + taskId + "} ");
-            Console.ResetColor();
-            Console.Write(title);
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine("[" + definition + "]");
-            Console.ResetColor();
-        }
-
-        private static double GetPercent(int value, int of)
-        {
-            return Math.Ceiling((double)(value * 100) / of);
-        }
+            return pagesDownloaded == pagesToDownload;
+        } 
     }
 }
