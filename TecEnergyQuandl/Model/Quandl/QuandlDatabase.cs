@@ -9,13 +9,26 @@ namespace TecEnergyQuandl.Model
     public class QuandlDatabase
     {
         public long Id { get; set; }
-        public string Name { get; set; }
+        private string name;
+        public string Name
+        {
+            get { return name; }
+            set { name = value.Replace("'", ""); }
+        }
+
         public string DatabaseCode { get; set; }
-        public string Description { get; set; }
+        private string description;
+        public string Description
+        {
+            get { return description; }
+            set { description = value.Replace("'", ""); }
+        }
+
         public long DatasetsCount { get; set; }
         public long Downloads { get; set; }
         public bool Premium { get; set; }
         public string Image { get; set; }
         public bool Favorite { get; set; }
+        public bool Import { get; set; }
     }
 }

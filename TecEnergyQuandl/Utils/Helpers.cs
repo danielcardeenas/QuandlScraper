@@ -12,5 +12,12 @@ namespace TecEnergyQuandl.Utils
         {
             return Math.Ceiling((double)(value * 100) / of);
         }
+
+        public static void ExitWithError(string error)
+        {
+            ConsoleInformer.Error("Error: " + error);
+            Console.ReadLine();
+            Environment.Exit(1);
+        }
     }
 }

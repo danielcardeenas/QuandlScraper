@@ -37,11 +37,16 @@
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Npgsql, Version=3.1.8.0, Culture=neutral, PublicKeyToken=5d8b90d52f46fda7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Npgsql.3.1.8\lib\net451\Npgsql.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="ShellProgressBar, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ShellProgressBar.3.0.0.0\lib\NET4\ShellProgressBar.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -52,7 +57,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FetchDatasets.cs" />
-    <Compile Include="Model\QuandlDatabase.cs" />
+    <Compile Include="PostgresHelpers\QuandlDatabaseActions.cs" />
+    <Compile Include="PostgresHelpers\SchemaActions.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Model\Quandl\QuandlDatabase.cs" />
     <Compile Include="Model\ResponseHelpers\DatabasesResponse.cs" />
     <Compile Include="Model\ResponseHelpers\MetaObject.cs" />
     <Compile Include="FetchDatabases.cs" />
@@ -63,10 +71,18 @@
     <Compile Include="Utils\Helpers.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Context\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="test.sql" />
+    <Content Include="TextFile1.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

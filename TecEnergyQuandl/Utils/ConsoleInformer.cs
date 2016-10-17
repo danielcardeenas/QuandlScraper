@@ -15,7 +15,32 @@ namespace TecEnergyQuandl.Utils
             Console.ResetColor();
             Console.Write(title);
             Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.WriteLine("[" + definition + "]");
+            Console.Write("[" + definition + "]");
+            Console.WriteLine();
+            Console.ResetColor();
+        }
+
+        public static void Inform(string definition)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Write("[" + definition + "]");
+            Console.WriteLine();
+            Console.ResetColor();
+        }
+
+        public static void Result(string definition)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.Write(definition);
+            Console.WriteLine();
+            Console.ResetColor();
+        }
+
+        public static void Error(string definition)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.Write(definition);
+            Console.WriteLine();
             Console.ResetColor();
         }
     }
