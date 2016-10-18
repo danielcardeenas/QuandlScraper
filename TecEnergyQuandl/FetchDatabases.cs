@@ -9,9 +9,10 @@ using System.Diagnostics;
 using System.Threading;
 using ShellProgressBar;
 using TecEnergyQuandl.Model.ResponseHelpers;
+using TecEnergyQuandl.Model.Quandl;
 using Newtonsoft.Json.Serialization;
-using TecEnergyQuandl.Model;
 using Npgsql;
+
 
 namespace TecEnergyQuandl
 {

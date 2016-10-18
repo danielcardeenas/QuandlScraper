@@ -11,11 +11,6 @@ namespace TecEnergyQuandl
     {
         static void Main(string[] args)
         {
-            // Only needed first run
-            // Or if you want to reset quandl databases
-            PostgresHelpers.SchemaActions.CreateSchema();
-            Console.WriteLine("\n");
-
             MainAsync().Wait();
 
             // Finish
@@ -25,16 +20,26 @@ namespace TecEnergyQuandl
         private static async Task MainAsync()
         {
             // Download databases
-            await BeginDownloadDatabases();
+            //await BeginDownloadDatabases();
 
             // Download Datasets
-            FetchDatasets.BeginDownloadDatasets();
+            BeginDownloadDatasets();
         }
 
         public static async Task BeginDownloadDatabases()
         {
+            // Only needed first run
+            // Or if you want to reset quandl databases
+            PostgresHelpers.SchemaActions.CreateSchema();
+            Console.WriteLine("\n");
+
             await FetchDatabases.BeginDownloadDatabases();
             Console.WriteLine("\n");
+
+            Console.WriteLine("############################################################################");
+            Console.WriteLine("Program is paused, now you should select the Quandl Databases in Postgress. \nPress enter to continue...");
+            Console.WriteLine("############################################################################");
+            Console.ReadLine();
         }
 
         public static void BeginDownloadDatasets()

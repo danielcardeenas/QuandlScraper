@@ -17,6 +17,7 @@ namespace TecEnergyQuandl.Utils
         public static string BASE_CONNECTION_STRING = "Host=localhost;" +
                                                  "Username=" + USER + ";" + 
                                                  "Password=" + PASSWORD + ";";
+
         public static string CONNECTION_STRING = BASE_CONNECTION_STRING + "Database=quandl";
     }
 }

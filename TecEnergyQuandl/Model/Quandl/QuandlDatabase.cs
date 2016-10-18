@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Npgsql;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TecEnergyQuandl.Model
+namespace TecEnergyQuandl.Model.Quandl
 {
     public class QuandlDatabase
     {
@@ -30,5 +31,23 @@ namespace TecEnergyQuandl.Model
         public string Image { get; set; }
         public bool Favorite { get; set; }
         public bool Import { get; set; }
+
+        public static QuandlDatabase MakeQuandlDatabase(NpgsqlDataReader row)
+        {
+            var database = new QuandlDatabase() {
+                Id = (long)row["id"],
+                Name = (string)row["name"],
+                DatabaseCode = (string)row["databasecode"],
+                Description = (string)row["description"],
+                DatasetsCount = (long)row["datasetscount"],
+                Downloads = (long)row["downloads"],
+                Premium = (bool)row["premium"],
+                Image = (string)row["image"],
+                Favorite = (bool)row["favorite"],
+                Import = (bool)row["import"]
+            };
+
+            return database;
+        }
     }
 }

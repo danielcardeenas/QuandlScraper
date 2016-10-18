@@ -91,13 +91,13 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
-                            ConsoleInformer.Inform("QuandlDatabases table already exists. Truncating");
-                            cmd.CommandText = "TRUNCATE TABLE databases";
-                            try { cmd.ExecuteNonQuery(); }
-                            catch (PostgresException exception)
-                            {
-                                conn.Close(); Helpers.ExitWithError(exception.Message);
-                            }
+                            ConsoleInformer.Inform("QuandlDatabases table already exists. Using it");
+                            //cmd.CommandText = "TRUNCATE TABLE databases";
+                            //try { cmd.ExecuteNonQuery(); }
+                            //catch (PostgresException exception)
+                            //{
+                            //    conn.Close(); Helpers.ExitWithError(exception.Message);
+                            //}
                         }
                         else { conn.Close(); Helpers.ExitWithError(ex.Message); }
                     }

@@ -7,9 +7,9 @@ using TecEnergyQuandl.Model.Quandl;
 
 namespace TecEnergyQuandl.Model.ResponseHelpers
 {
-    public class DatabasesResponse
+    public class DatasetsResponse
     {
         public MetaObject Meta { get; set; }
-        public List<QuandlDatabase> Databases { get; set; }
+        public List<QuandlDataset> Datasets { get; set; }
     }
 }

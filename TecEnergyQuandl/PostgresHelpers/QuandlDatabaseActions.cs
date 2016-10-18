@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TecEnergyQuandl.Model;
+using TecEnergyQuandl.Model.Quandl;
 using TecEnergyQuandl.Utils;
 
 namespace TecEnergyQuandl.PostgresHelpers
@@ -33,13 +33,57 @@ namespace TecEnergyQuandl.PostgresHelpers
                         Helpers.ExitWithError(ex.Message);
                     }
 
-                    ConsoleInformer.PrintProgress("2A", "Inserting quandl databases: ", "100%");
+                    ConsoleInformer.PrintProgress("2A", "Inserting new quandl databases: ", "100%");
 
                     // Close connection
                     // ===============================================================
                     conn.Close();
                 }
             }
+        }
+
+        public static List<QuandlDatabase> GetImportedDatabases()
+        {
+            // Query
+            string query = @"SELECT id, name, databasecode, description, datasetscount, downloads, premium, image, favorite, import
+                                    FROM public.databases
+                                    WHERE import = true";
+
+            List<QuandlDatabase> databases = new List<QuandlDatabase>();
+
+            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand(query))
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+                    cmd.Connection = conn;
+
+                    try
+                    {
+                        // Execute the query and obtain a result set
+                        NpgsqlDataReader dr = cmd.ExecuteReader();
+
+                        // Each row
+                        while (dr.Read())
+                            databases.Add(QuandlDatabase.MakeQuandlDatabase(dr));
+                    }
+                    catch (Exception ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
+
+                    ConsoleInformer.PrintProgress("0B", "Querying imported databases: ", "100%");
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+
+            return databases;
         }
 
         private static string QuandlDatabasesInsertQuery(List<QuandlDatabase> databases)
