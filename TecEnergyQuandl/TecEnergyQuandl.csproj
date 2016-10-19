@@ -58,8 +58,10 @@
   <ItemGroup>
     <Compile Include="FetchDatasets.cs" />
     <Compile Include="Model\Quandl\QuandlDataset.cs" />
+    <Compile Include="Model\Quandl\QuandlDatasetGroup.cs" />
     <Compile Include="Model\ResponseHelpers\DatasetsResponse.cs" />
     <Compile Include="PostgresHelpers\QuandlDatabaseActions.cs" />
+    <Compile Include="PostgresHelpers\QuandlDatasetActions.cs" />
     <Compile Include="PostgresHelpers\SchemaActions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Model\Quandl\QuandlDatabase.cs" />

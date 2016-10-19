@@ -13,7 +13,7 @@ namespace TecEnergyQuandl
     public static class FetchDatasets
     {
         private static List<QuandlDatabase> databases;
-        private static List<QuandlDataset> datasets = new List<QuandlDataset>();
+        private static List<QuandlDatasetGroup> datasetsGroups = new List<QuandlDatasetGroup>();
 
         private static int pagesSum;
         private static bool firstTime = true;
@@ -29,11 +29,18 @@ namespace TecEnergyQuandl
             );
             Console.WriteLine();
 
+            int count = 0;
             foreach (QuandlDatabase database in databases)
             {
                 // Starting 0%
                 pagesSum = 0;
-                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets for [" + database.DatabaseCode + "]: ", "0%");
+                count++;
+
+                // Each database -> gives a bunch of datasets of its own kind
+                // So this is called a new group
+                datasetsGroups.Add(new QuandlDatasetGroup() { DatabaseCode = database.DatabaseCode, Datasets = new List<QuandlDataset>() });
+
+                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", "0%");
 
                 // Get first datasets page ordered
                 var datasetsReponse = DownloadDataset(1, database);
@@ -42,10 +49,15 @@ namespace TecEnergyQuandl
                 if (datasetsReponse.Meta.TotalPages >= 2)
                     await DownloadDatasetsAsync(2, datasetsReponse.Meta.TotalPages, database);
 
-                Utils.ConsoleInformer.Inform("#############################");
-                Utils.ConsoleInformer.Inform(" -[DB] " + database.DatabaseCode + " Finished download");
-                Utils.ConsoleInformer.Inform("#############################");
+                Utils.ConsoleInformer.InformSimple("[DB] " + database.DatabaseCode + " Done. [" + count + "/" + databases.Count + "]");
+                Utils.ConsoleInformer.InformSimple("-------------------------------------");
             }
+
+            // Manipulate data into database
+            Console.WriteLine("\nInserting data into database\n---------------------------------------");
+
+            // Make datasets list
+            PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasets(datasetsGroups);
         }
 
         private static DatasetsResponse DownloadDataset(int page, QuandlDatabase database)
@@ -57,10 +69,10 @@ namespace TecEnergyQuandl
                     JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
                 pagesSum++;
-                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets for [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
-
-                // Add first page results
-                datasets.AddRange(response.Datasets);
+                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
+                
+                // Add first page results and add it to its own group
+                datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
 
                 return response;
             }
@@ -69,12 +81,10 @@ namespace TecEnergyQuandl
         private static async Task DownloadDatasetsAsync(int fromPage, int toPage, QuandlDatabase database)
         {
             // Fix console cursor position
-            if (firstTime) { HotFixConsoleCursor(); }
+            //if (firstTime) { HotFixConsoleCursor(); }
 
             var pages = Enumerable.Range(fromPage, toPage - 1);
             await Task.WhenAll(pages.Select(i => DownloadDatasetsAsync(i, database)));
-
-            //Console.WriteLine(" -[DB] " + database.DatabaseCode + " Finished download");
         }
 
         private static async Task DownloadDatasetsAsync(int page, QuandlDatabase database)
@@ -86,8 +96,11 @@ namespace TecEnergyQuandl
                         JsonConvert.DeserializeObject<DatasetsResponse>(data, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
                 pagesSum++;
-                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets for [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
-                datasets.AddRange(response.Datasets);
+                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
+
+                // Add it to its own group
+                datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
+                //datasets.AddRange(response.Datasets);
             }
         }
 

@@ -28,6 +28,14 @@ namespace TecEnergyQuandl.Utils
             Console.ResetColor();
         }
 
+        public static void InformSimple(string definition)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+            Console.Write(definition);
+            Console.WriteLine();
+            Console.ResetColor();
+        }
+
         public static void Result(string definition)
         {
             Console.ForegroundColor = ConsoleColor.DarkBlue;

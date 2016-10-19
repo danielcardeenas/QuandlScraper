@@ -23,14 +23,14 @@ namespace TecEnergyQuandl
             //await BeginDownloadDatabases();
 
             // Download Datasets
-            BeginDownloadDatasets();
+            await BeginDownloadDatasets();
         }
 
         public static async Task BeginDownloadDatabases()
         {
             // Only needed first run
             // Or if you want to reset quandl databases
-            PostgresHelpers.SchemaActions.CreateSchema();
+            PostgresHelpers.SchemaActions.MakeDatabase();
             Console.WriteLine("\n");
 
             await FetchDatabases.BeginDownloadDatabases();
@@ -42,9 +42,9 @@ namespace TecEnergyQuandl
             Console.ReadLine();
         }
 
-        public static void BeginDownloadDatasets()
+        public static async Task BeginDownloadDatasets()
         {
-            FetchDatasets.BeginDownloadDatasets();
+            await FetchDatasets.BeginDownloadDatasets();
             Console.WriteLine("\n");
         }
     }

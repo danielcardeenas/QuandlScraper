@@ -46,7 +46,7 @@ namespace TecEnergyQuandl.PostgresHelpers
         {
             // Query
             string query = @"SELECT id, name, databasecode, description, datasetscount, downloads, premium, image, favorite, import
-                                    FROM public.databases
+                                    FROM quandl.databases
                                     WHERE import = true";
 
             List<QuandlDatabase> databases = new List<QuandlDatabase>();
@@ -91,7 +91,7 @@ namespace TecEnergyQuandl.PostgresHelpers
             // Reference last item
             var last = databases.Last();
 
-            string query = "INSERT INTO public.databases(id, name, databasecode, description, datasetscount, downloads, premium, image, favorite) VALUES ";
+            string query = "INSERT INTO quandl.databases(id, name, databasecode, description, datasetscount, downloads, premium, image, favorite) VALUES ";
             foreach(QuandlDatabase item in databases)
             {
                 query += String.Format(@"({0}, '{1}', '{2}', '{3}', {4}, {5}, {6}, '{7}', {8})",
