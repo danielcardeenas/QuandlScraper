@@ -16,7 +16,6 @@ namespace TecEnergyQuandl
         private static List<QuandlDatasetGroup> datasetsGroups = new List<QuandlDatasetGroup>();
 
         private static int pagesSum;
-        private static bool firstTime = true;
         public static async Task BeginDownloadDatasets()
         {
             // Download first page and check meta
@@ -102,13 +101,6 @@ namespace TecEnergyQuandl
                 datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
                 //datasets.AddRange(response.Datasets);
             }
-        }
-
-        private static void HotFixConsoleCursor()
-        {
-            Console.CursorTop--;
-            Console.CursorTop--;
-            firstTime = false;
         }
     }
 }

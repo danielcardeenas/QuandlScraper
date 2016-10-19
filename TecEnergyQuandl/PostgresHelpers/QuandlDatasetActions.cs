@@ -17,22 +17,15 @@ namespace TecEnergyQuandl.PostgresHelpers
             SchemaActions.CreateQuandlDatasetTable();
 
             // Insert datasets
+            int count = 0;
             foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
-                InsertQuandlDatasets(datasetGroup);
+            {
+                count++;
+                InsertQuandlDatasets(datasetGroup, count, datasetsGroups.Count);
+            }
         }
 
-        public static void InsertQuandlDatasetsData(List<QuandlDatasetGroup> datasetsGroups)
-        {
-            // Make datasets model tables
-            foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
-                SchemaActions.CreateQuandlDatasetDataTable(datasetGroup);
-
-            // Insert data
-            //foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
-            //    InsertQuandlDataset(datasetGroup);
-        }
-
-        public static void InsertQuandlDatasets(QuandlDatasetGroup datasetGroup)
+        public static void InsertQuandlDatasets(QuandlDatasetGroup datasetGroup, int currentGroup, int totalGroups)
         {
             using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
             {
@@ -54,13 +47,76 @@ namespace TecEnergyQuandl.PostgresHelpers
                         Helpers.ExitWithError(ex.Message);
                     }
 
-                    ConsoleInformer.PrintProgress("2A", "Inserting new quandl datasets: ", "100%");
+                    ConsoleInformer.PrintProgress("2A", "Inserting [" + datasetGroup.DatabaseCode + "] datasets: ", Utils.Helpers.GetPercent(currentGroup, totalGroups).ToString() + "%");
 
                     // Close connection
                     // ===============================================================
                     conn.Close();
                 }
             }
+        }
+
+        public static List<QuandlDatasetGroup> GetImportedDatasets()
+        {
+            // Query
+            string query = @"SELECT " + QuandlDataset.GetColumnsForQuery() + " " +
+                                    @"FROM quandl.datasets
+                                    WHERE import = true";
+
+            List<QuandlDatasetGroup> datasetsGroups = new List<QuandlDatasetGroup>();
+            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand(query))
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+                    cmd.Connection = conn;
+
+                    try
+                    {
+                        // Execute the query and obtain a result set
+                        NpgsqlDataReader dr = cmd.ExecuteReader();
+
+                        // Each row
+                        while (dr.Read())
+                        {
+                            // Add each dataset to its own group (Database code)
+                            QuandlDataset dataset = QuandlDataset.MakeQuandlDataset(dr);
+
+                            // If group doesnt exists, create it
+                            if (!datasetsGroups.Exists(d => d.DatabaseCode == dataset.DatabaseCode))
+                                datasetsGroups.Add(new QuandlDatasetGroup() { DatabaseCode = dataset.DatabaseCode, Datasets = new List<QuandlDataset>() });
+
+                            datasetsGroups.Find(d => d.DatabaseCode == dataset.DatabaseCode).Datasets.Add(dataset);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
+
+                    ConsoleInformer.PrintProgress("0B", "Querying imported databases: ", "100%");
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+
+            return datasetsGroups;
+        }
+
+        public static void InsertQuandlDatasetsData(List<QuandlDatasetGroup> datasetsGroups)
+        {
+            // Make datasets model tables
+            foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
+                SchemaActions.CreateQuandlDatasetDataTable(datasetGroup);
+
+            // Insert data
+            //foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
+            //    InsertQuandlDataset(datasetGroup);
         }
     }
 }

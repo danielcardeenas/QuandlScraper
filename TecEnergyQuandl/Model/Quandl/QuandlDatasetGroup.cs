@@ -19,17 +19,17 @@ namespace TecEnergyQuandl.Model.Quandl
         // Not ready
         public string MakeInsertQuery()
         {
-            string query = "INSERT INTO quandl.datasets (" + GetColumnsForQuery() + ") VALUES ";
+            string query = "INSERT INTO quandl.datasets (" + QuandlDataset.GetColumnsForQuery() + ") VALUES ";
 
             var last = Datasets.Last();
             foreach (QuandlDataset item in Datasets)
             {
-                query += String.Format(@"({0}, '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', {10}, {11})",
+                query += String.Format(@"({0}, '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', {10}, {11}, {12})",
                                     item.Id, item.DatasetCode, item.DatabaseCode, item.Name, item.Description, // 0 - 4
                                     item.NewestAvailableDate.ToString("yyyy/MM/dd"), item.OldestAvailableDate.ToString("yyyy/MM/dd"), // 5 - 6
                                     string.Join(",", item.ColumnNames), // 7 
                                     item.Frequency, item.Type, // 8 - 9
-                                    item.Premium, item.DatabaseId); // 10 - 11
+                                    item.Premium, item.DatabaseId, item.Import); // 10 - 12
 
                 if (item != last)
                     query += ",\n";
@@ -56,24 +56,6 @@ namespace TecEnergyQuandl.Model.Quandl
             //query += "\nON CONFLICT(id) DO NOTHING";
             return query;
 
-        }
-
-        private string GetColumnsForQuery()
-        {
-            string columns = @" Id,
-                                DatasetCode,
-                                DatabaseCode,
-                                Name,
-                                Description,
-                                NewestAvailableDate,
-                                OldestAvailableDate,
-                                ColumnNames,
-                                Frequency,
-                                Type,
-                                Premium,
-                                DatabaseId";
-
-            return columns;
         }
 
         private string GetColumnsForDataQuery()
@@ -118,14 +100,14 @@ namespace TecEnergyQuandl.Model.Quandl
                 column == "Low" ||
                 column == "Close" ||
                 column == "Volume" ||
-                column == "Ex-Dividend" ||
-                column == "Split Ratio" ||
-                column == "Adj. Open" ||
-                column == "Adj. High" ||
-                column == "Adj. Low" ||
-                column == "Adj. Close" ||
-                column == "Adjusted Close" ||
-                column == "Adj. Volume"
+                column == "ExDividend" ||
+                column == "SplitRatio" ||
+                column == "AdjOpen" ||
+                column == "AdjHigh" ||
+                column == "AdjLow" ||
+                column == "AdjClose" ||
+                column == "AdjustedClose" ||
+                column == "AdjVolume"
                 )
                 return "NUMERIC";
 

@@ -230,12 +230,12 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
-                            ConsoleInformer.Inform("QuandlDataset table model already exists. Using it");
+                            ConsoleInformer.Inform("Table model [" + datasetGroup.DatabaseCode + "] already exists. Using it");
                         }
                         else { conn.Close(); Helpers.ExitWithError(ex.Message); }
                     }
 
-                    ConsoleInformer.PrintProgress("2B", "[" + datasetGroup.DatabaseCode + "] Creating table model: ", "100%");
+                    ConsoleInformer.PrintProgress("2C", "[" + datasetGroup.DatabaseCode + "] Creating table model: ", "100%");
 
                     // Close connection
                     // ===============================================================

@@ -23,7 +23,10 @@ namespace TecEnergyQuandl
             //await BeginDownloadDatabases();
 
             // Download Datasets
-            await BeginDownloadDatasets();
+            //await BeginDownloadDatasets();
+
+            // Download Datasets Data
+            await BeginDownloadDatasetsData();
         }
 
         public static async Task BeginDownloadDatabases()
@@ -46,6 +49,21 @@ namespace TecEnergyQuandl
         {
             await FetchDatasets.BeginDownloadDatasets();
             Console.WriteLine("\n");
+
+            Console.WriteLine("############################################################################");
+            Console.WriteLine("Program is paused, now you should select the Quandl Datasets in Postgress. \nPress enter to continue...");
+            Console.WriteLine("############################################################################");
+            Console.ReadLine();
+        }
+
+        public static async Task BeginDownloadDatasetsData()
+        {
+            await FetchData.BeginDownloadData();
+            Console.WriteLine("\n");
+
+            Console.WriteLine("############################################################################");
+            Console.WriteLine("Finished fetching data. \nPress enter to exit...");
+            Console.WriteLine("############################################################################");
         }
     }
 }
