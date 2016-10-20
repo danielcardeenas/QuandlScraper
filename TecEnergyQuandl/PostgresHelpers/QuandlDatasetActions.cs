@@ -21,11 +21,12 @@ namespace TecEnergyQuandl.PostgresHelpers
             foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
             {
                 count++;
-                InsertQuandlDatasets(datasetGroup, count, datasetsGroups.Count);
+                InsertQuandlDatasets(datasetGroup);
+                ConsoleInformer.PrintProgress("3B", "Inserting [" + datasetGroup.DatabaseCode + "] datasets: ", Utils.Helpers.GetPercent(count, datasetsGroups.Count).ToString() + "%");
             }
         }
 
-        public static void InsertQuandlDatasets(QuandlDatasetGroup datasetGroup, int currentGroup, int totalGroups)
+        public static void InsertQuandlDatasets(QuandlDatasetGroup datasetGroup)
         {
             using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
             {
@@ -46,8 +47,6 @@ namespace TecEnergyQuandl.PostgresHelpers
                         conn.Close();
                         Helpers.ExitWithError(ex.Message);
                     }
-
-                    ConsoleInformer.PrintProgress("2A", "Inserting [" + datasetGroup.DatabaseCode + "] datasets: ", Utils.Helpers.GetPercent(currentGroup, totalGroups).ToString() + "%");
 
                     // Close connection
                     // ===============================================================
@@ -97,7 +96,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                         Helpers.ExitWithError(ex.Message);
                     }
 
-                    ConsoleInformer.PrintProgress("0B", "Querying imported databases: ", "100%");
+                    ConsoleInformer.PrintProgress("0C", "Querying imported datasets: ", "100%");
 
                     // Close connection
                     // ===============================================================
@@ -115,8 +114,13 @@ namespace TecEnergyQuandl.PostgresHelpers
                 SchemaActions.CreateQuandlDatasetDataTable(datasetGroup);
 
             // Insert data
-            //foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
-            //    InsertQuandlDataset(datasetGroup);
+            foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
+                InsertQuandlDataset(datasetGroup);
+        }
+
+        private static void InsertQuandlDataset(QuandlDatasetGroup datasetGroup)
+        {
+            
         }
     }
 }

@@ -59,7 +59,9 @@
     <Compile Include="FetchData.cs" />
     <Compile Include="FetchDatasets.cs" />
     <Compile Include="Model\Quandl\QuandlDataset.cs" />
+    <Compile Include="Model\Quandl\QuandlDatasetData.cs" />
     <Compile Include="Model\Quandl\QuandlDatasetGroup.cs" />
+    <Compile Include="Model\ResponseHelpers\DataResponse.cs" />
     <Compile Include="Model\ResponseHelpers\DatasetsResponse.cs" />
     <Compile Include="PostgresHelpers\QuandlDatabaseActions.cs" />
     <Compile Include="PostgresHelpers\QuandlDatasetActions.cs" />
