@@ -69,7 +69,7 @@ namespace TecEnergyQuandl.Model.Quandl
                                                 .Select(x => x.Trim())
                                                 .Where(x => !string.IsNullOrWhiteSpace(x))
                                                 .ToList(),
-                Frequency = (string)row["description"],
+                Frequency = (string)row["frequency"],
                 Type = (string)row["type"],
                 Premium = (bool)row["premium"],
                 DatabaseId = (long)row["databaseid"],

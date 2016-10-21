@@ -13,7 +13,6 @@ namespace TecEnergyQuandl
     public static class FetchData
     {
         private static List<QuandlDatasetGroup> datasetsGroups;
-        private static List<QuandlDatasetGroup> datasetsDataGroups = new List<QuandlDatasetGroup>();
 
         private static int datasetsFetched = 0;
         public static async Task BeginDownloadData()

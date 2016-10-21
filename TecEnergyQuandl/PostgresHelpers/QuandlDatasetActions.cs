@@ -114,13 +114,42 @@ namespace TecEnergyQuandl.PostgresHelpers
                 SchemaActions.CreateQuandlDatasetDataTable(datasetGroup);
 
             // Insert data
+            int count = 0;
             foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
-                InsertQuandlDataset(datasetGroup);
+            {
+                count++;
+                //ConsoleInformer.PrintProgress("3C", "Inserting data [" + datasetGroup.DatabaseCode + "/" + datasetGroup.da + "]: ", Helpers.GetPercent(count, datasetsGroups.Count).ToString() + "%");
+                InsertQuandlDatasetData(datasetGroup);
+            }
         }
 
-        private static void InsertQuandlDataset(QuandlDatasetGroup datasetGroup)
+        private static void InsertQuandlDatasetData(QuandlDatasetGroup datasetGroup)
         {
-            
+            using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand())
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+
+                    // Query
+                    string query = datasetGroup.MakeInsertDataQuery();
+
+                    cmd.Connection = conn;
+                    cmd.CommandText = query;
+                    try { cmd.ExecuteNonQuery(); }
+                    catch (PostgresException ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
         }
     }
 }

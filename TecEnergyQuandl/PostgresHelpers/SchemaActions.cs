@@ -207,19 +207,16 @@ namespace TecEnergyQuandl.PostgresHelpers
 
                     // Query
                     string query = @"CREATE TABLE quandl." + datasetGroup.DatabaseCode + @"(
-                                        Id                   BIGINT  PRIMARY KEY NOT NULL,
+                                        Id                   BIGSERIAL PRIMARY KEY NOT NULL,
                                         DatasetCode          TEXT,
                                         DatabaseCode         TEXT,
                                         Name                 TEXT    NOT NULL,
-                                        Description          TEXT,
-                                        NewestAvailableDate  DATE,
-                                        OldestAvailableDate  DATE,
                                         Frequency            TEXT,
                                         Type                 TEXT,
-                                        Premium              BOOL    DEFAULT FALSE,
+                                        Transform            TEXT,
                                         DatabaseId           BIGINT," +
                                         // Column names [specific data]
-                                        datasetGroup.MakeDatasetsExtraColumns() + @"
+                                        datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @"
                                     );";
 
                     cmd.Connection = conn;

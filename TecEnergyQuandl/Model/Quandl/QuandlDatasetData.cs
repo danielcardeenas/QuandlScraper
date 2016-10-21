@@ -12,7 +12,7 @@ namespace TecEnergyQuandl.Model.Quandl
         public DateTime EndDate { get; set; }
         public string Transform { get; set; }
         public string Collapse { get; set; }
-        public List<List<dynamic>> data { get; set; }
+        public List<object[]> Data { get; set; }
 
         public void SetBaseDataset(QuandlDataset dataset)
         {
