@@ -211,8 +211,6 @@ namespace TecEnergyQuandl.PostgresHelpers
                                         DatasetCode          TEXT,
                                         DatabaseCode         TEXT,
                                         Name                 TEXT    NOT NULL,
-                                        Frequency            TEXT,
-                                        Type                 TEXT,
                                         Transform            TEXT,
                                         DatabaseId           BIGINT," +
                                         // Column names [specific data]

@@ -16,6 +16,7 @@ namespace TecEnergyQuandl.Utils
         public static void ExitWithError(string error)
         {
             ConsoleInformer.Error("Error: " + error);
+            ConsoleInformer.Error("Press enter to exit...");
             Console.ReadLine();
             Environment.Exit(1);
         }

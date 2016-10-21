@@ -110,6 +110,7 @@ namespace TecEnergyQuandl.PostgresHelpers
         public static void InsertQuandlDatasetsData(List<QuandlDatasetGroup> datasetsGroups)
         {
             // Make datasets model tables
+            Console.WriteLine("Creating unique table model for datasets:");
             foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
                 SchemaActions.CreateQuandlDatasetDataTable(datasetGroup);
 
@@ -118,8 +119,9 @@ namespace TecEnergyQuandl.PostgresHelpers
             foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
             {
                 count++;
-                //ConsoleInformer.PrintProgress("3C", "Inserting data [" + datasetGroup.DatabaseCode + "/" + datasetGroup.da + "]: ", Helpers.GetPercent(count, datasetsGroups.Count).ToString() + "%");
+                Console.WriteLine("\nCreating query for datasets in group: [" + datasetGroup.DatabaseCode + "] (" + count + "/" + datasetsGroups.Count + ")");
                 InsertQuandlDatasetData(datasetGroup);
+                Utils.ConsoleInformer.PrintProgress("3C", "Finished inserting imported data for group :[" + datasetGroup.DatabaseCode + "]", "100%");
             }
         }
 

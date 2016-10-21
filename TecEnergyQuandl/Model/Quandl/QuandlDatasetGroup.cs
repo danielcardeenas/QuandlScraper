@@ -11,6 +11,7 @@ namespace TecEnergyQuandl.Model.Quandl
         public string DatabaseCode { get; set; }
         public List<QuandlDataset> Datasets { get; set; }
 
+        private List<string> queries;
         // Return extra columns
         // Ex. For WIKI:
         //  Date, Vol, High, Low, etc..
@@ -19,7 +20,7 @@ namespace TecEnergyQuandl.Model.Quandl
         public List<string> ColumnNames()
         {
             return Datasets.ElementAt(0).ColumnNames;
-        }
+        }   
 
         // Not ready
         public string MakeInsertQuery()
@@ -42,40 +43,82 @@ namespace TecEnergyQuandl.Model.Quandl
 
             query += "\nON CONFLICT(id) DO NOTHING";
             return query;
-
         }
 
         public string MakeInsertDataQuery()
         {
             string query = "INSERT INTO quandl." + DatabaseCode + "(" + GetColumnsForInsertDataQuery() + ") VALUES";
-
-            var lastDataset = (QuandlDatasetData)Datasets.Last();
-            var lastDataObject = lastDataset.Data.Last();
+            int elementsPerThread = 500;
+            queries = new List<string>();
+            var tasks = new List<Task>();
             foreach (QuandlDatasetData item in Datasets)
             {
-                foreach (object[] data in item.Data)
-                {
-                    // Base insert
-                    query += String.Format(@"('{0}', '{1}', '{2}', '{3}', {4}",
-                                    item.DatasetCode, item.DatabaseCode, item.Name, // 0 - 2
-                                    item.Transform, // 3
-                                    item.DatabaseId); // 4
-
-
-                    // Extra columns
-                    query += String.Format(FormatExtraColumns(0) + " )",
-                                    data);
-
-
-
-                    if (item != lastDataset || data != lastDataObject)
-                        query += ",\n";
-                }
+                tasks.AddRange(CreateQueryThreads(item, elementsPerThread));
             }
 
-            query += "\nON CONFLICT(id) DO NOTHING";
-            return query;
+            // Wait for all the threads to complete
+            Task.WaitAll(tasks.ToArray());
 
+            // Join all the querys
+            string values = String.Join("\n", queries);
+
+            // Remove last comma ","
+            values = values.Remove(values.Length - 1);
+
+            // Join "insert into... values" + "(...)"
+            query += values;
+            query += "\nON CONFLICT(id) DO NOTHING";
+
+            return query;
+        }
+
+        private int GetThreadsNeeded(int dataCount, int elementsPerThread)
+        {
+            return (int)Math.Ceiling(((double)dataCount / (double)elementsPerThread));
+        }
+
+        private Task[] CreateQueryThreads(QuandlDatasetData item, int elementsPerThread)
+        {
+            var tasks = new List<Task>();
+            int threadsNeeded = GetThreadsNeeded(item.Data.Count, elementsPerThread);
+
+            int remainingElements = item.Data.Count;
+            int from = 0;
+            for (int i = 0; i < threadsNeeded; i++)
+            {
+                int fromIndex = from;
+                int toIndex = fromIndex + elementsPerThread;
+                tasks.Add(Task.Factory.StartNew(() => CreatePartialQuery(item, fromIndex, toIndex)));
+
+                from += elementsPerThread;
+            }
+
+            return tasks.ToArray();
+        }
+
+        private void CreatePartialQuery(QuandlDatasetData dataset, int from, int to)
+        {
+            if (to > dataset.Data.Count)
+                to = dataset.Data.Count;
+
+            string query = "";
+            for (int i = from; i < to; i++)
+            {
+                // Current
+                object[] data = dataset.Data[i];
+
+                // Base insert
+                query += String.Format(@"('{0}', '{1}', '{2}', '{3}', {4}",
+                                dataset.DatasetCode, dataset.DatabaseCode, dataset.Name, // 0 - 2
+                                dataset.Transform, // 3
+                                dataset.DatabaseId); // 4
+
+                // Extra columns
+                query += String.Format(FormatExtraColumns(0) + " ),",
+                                data);
+            }
+
+            queries.Add(query);
         }
 
         private string FormatExtraColumns(int fromNumber)

@@ -40,7 +40,7 @@ namespace TecEnergyQuandl
                 await DownloadDatasetsDataAsync(datasetGroup, datasetGroup.Datasets.Count);
             }
 
-            Console.WriteLine("");
+            //Console.WriteLine("");
 
             // Make datasets model tables
             PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetsData(datasetsGroups);

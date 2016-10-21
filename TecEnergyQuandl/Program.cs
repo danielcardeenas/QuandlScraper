@@ -11,7 +11,8 @@ namespace TecEnergyQuandl
     {
         static void Main(string[] args)
         {
-            MainAsync().Wait();
+            try { MainAsync().Wait(); }
+            catch (Exception ex) { Utils.Helpers.ExitWithError(ex.InnerException.Message); }
 
             // Finish
             Console.ReadLine();
