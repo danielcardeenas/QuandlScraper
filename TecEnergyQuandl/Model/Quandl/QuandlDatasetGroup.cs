@@ -26,30 +26,35 @@ namespace TecEnergyQuandl.Model.Quandl
         // Creates query to insert dataset
         public string MakeInsertQuery()
         {
-            string query = "INSERT INTO quandl.datasets (" + QuandlDataset.GetColumnsForQuery() + ") VALUES ";
+            string query = @"WITH data(" + QuandlDataset.GetColumnsForQuery() + @") as ( values";
 
             var last = Datasets.Last();
             foreach (QuandlDataset item in Datasets)
             {
-                query += String.Format(@"({0}, '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', {10}, {11}, {12})",
+                query += String.Format(@"({0}, '{1}', '{2}', '{3}', '{4}', to_date('{5}', 'YYYY-MM_DD'), to_date('{6}', 'YYYY-MM_DD'), '{7}', '{8}', '{9}', {10}, {11}, {12})",
                                     item.Id, item.DatasetCode, item.DatabaseCode, item.Name, item.Description, // 0 - 4
-                                    item.NewestAvailableDate.ToString("yyyy/MM/dd"), item.OldestAvailableDate.ToString("yyyy/MM/dd"), // 5 - 6
+                                    item.NewestAvailableDate.ToString("yyyy-MM-dd"), item.OldestAvailableDate.ToString("yyyy-MM-dd"), // 5 - 6
                                     string.Join(",", item.ColumnNames), // 7 
                                     item.Frequency, item.Type, // 8 - 9
                                     item.Premium, item.DatabaseId, item.Import); // 10 - 12
 
                 if (item != last)
                     query += ",\n";
+                else
+                    query += ")";
             }
 
-            query += "\nON CONFLICT(id) DO NOTHING";
+            query += "\nINSERT INTO quandl.datasets (" + QuandlDataset.GetColumnsForQuery() + ")" +
+                    " SELECT " + QuandlDataset.GetColumnsForQuery() +
+                    " FROM data" +
+                    " WHERE NOT EXISTS (SELECT 1 FROM quandl.datasets ds WHERE ds.Id = data.Id)";
             return query;
         }
 
         // Creates query to insert data
         public string MakeInsertDataQuery()
         {
-            string query = "INSERT INTO quandl." + DatabaseCode + "(" + GetColumnsForInsertDataQuery() + ") VALUES";
+            string query = @"WITH data(" + GetColumnsForInsertDataQuery() + @") as ( values";
 
             // Data elements to be formated for each thread
             int elementsPerThread = 500;
@@ -83,7 +88,11 @@ namespace TecEnergyQuandl.Model.Quandl
 
             // Join "insert into... values" + "(...)"
             query += values;
-            query += "\nON CONFLICT(id) DO NOTHING";
+            query += ")"; // Close (values ... ) 
+            query += "\nINSERT INTO quandl." + DatabaseCode + "(" + GetColumnsForInsertDataQuery() + ")" +
+                     " SELECT " + GetColumnsForInsertDataQuery() +
+                     " FROM data" +
+                     " WHERE NOT EXISTS (SELECT 1 FROM quandl." + DatabaseCode + " ds WHERE ds.Id = data.Id)";
 
             return query;
         }

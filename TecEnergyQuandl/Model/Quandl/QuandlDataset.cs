@@ -100,5 +100,24 @@ namespace TecEnergyQuandl.Model.Quandl
 
             return columns;
         }
+
+        public static string GetColumnsForQuerySuffixed(string suffix)
+        {
+            string columns = @" [].Id,
+                                [].DatasetCode,
+                                [].DatabaseCode,
+                                [].Name,
+                                [].Description,
+                                [].NewestAvailableDate,
+                                [].OldestAvailableDate,
+                                [].ColumnNames,
+                                [].Frequency,
+                                [].Type,
+                                [].Premium,
+                                [].DatabaseId,
+                                [].Import";
+
+            return columns.Replace("[]", suffix);
+        }
     }
 }

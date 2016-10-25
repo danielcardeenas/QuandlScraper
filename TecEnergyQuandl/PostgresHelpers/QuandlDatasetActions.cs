@@ -116,10 +116,15 @@ namespace TecEnergyQuandl.PostgresHelpers
 
         public static List<QuandlDatasetGroup> GetImportedDatasets()
         {
+            // This query does not takes in count if the de dataset's database is imported too
+            //string query = @"SELECT " + QuandlDataset.GetColumnsForQuery() + " " +
+            //                        @"FROM quandl.datasets
+            //                        WHERE import = true";
+
             // Query
-            string query = @"SELECT " + QuandlDataset.GetColumnsForQuery() + " " +
-                                    @"FROM quandl.datasets
-                                    WHERE import = true";
+            string query = @"SELECT " + QuandlDataset.GetColumnsForQuerySuffixed("ds") + @" 
+                            FROM quandl.databases INNER JOIN quandl.datasets ds ON (quandl.databases.databasecode = ds.databasecode)
+                            WHERE quandl.databases.import = true AND ds.import = true";
 
             List<QuandlDatasetGroup> datasetsGroups = new List<QuandlDatasetGroup>();
             using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))

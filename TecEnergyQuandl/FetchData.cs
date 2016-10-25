@@ -35,7 +35,13 @@ namespace TecEnergyQuandl
                 // Item1 = Newest date of data
                 // Item2 = Dataset code
                 foreach (var tuple in datasetNewestDateList)
-                    datasetGroup.Datasets.Find(d => d.DatasetCode == tuple.Item2).NewestAvailableDate = tuple.Item1;
+                {
+                    // Will only add those who dataset is imported
+                    QuandlDataset dataset = datasetGroup.Datasets.Find(d => d.DatasetCode == tuple.Item2);
+                    if (dataset != null) { dataset.NewestAvailableDate = tuple.Item1; }
+
+                    //datasetGroup.Datasets.Find(d => d.DatasetCode == tuple.Item2).NewestAvailableDate = tuple.Item1;
+                }
             }
 
             int count = 0;
