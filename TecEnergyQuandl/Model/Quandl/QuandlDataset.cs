@@ -28,6 +28,7 @@ namespace TecEnergyQuandl.Model.Quandl
         }
 
         //public DateTime RefreshedAt { get; set; }
+        //public DateTime? LastFetchedDate { get; set; }
         public DateTime NewestAvailableDate { get; set; }
         public DateTime OldestAvailableDate { get; set; }
 
@@ -62,8 +63,10 @@ namespace TecEnergyQuandl.Model.Quandl
                 DatabaseCode = (string)row["databasecode"],
                 Name = (string)row["name"],
                 Description = (string)row["description"],
-                NewestAvailableDate = (DateTime)row["newestavailabledate"],
-                OldestAvailableDate = (DateTime)row["oldestavailabledate"],
+                NewestAvailableDate = row.GetDateTime(row.GetOrdinal("newestavailabledate")),
+                OldestAvailableDate = row.GetDateTime(row.GetOrdinal("oldestavailabledate")),
+                //NewestAvailableDate = (DateTime)row["newestavailabledate"],
+                //OldestAvailableDate = (DateTime)row["oldestavailabledate"],
                 ColumnNames = row["columnnames"].ToString()
                                                 .Split(',')
                                                 .Select(x => x.Trim())

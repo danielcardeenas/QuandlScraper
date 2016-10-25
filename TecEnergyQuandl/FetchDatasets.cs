@@ -39,7 +39,7 @@ namespace TecEnergyQuandl
                 // So this is called a new group
                 datasetsGroups.Add(new QuandlDatasetGroup() { DatabaseCode = database.DatabaseCode, Datasets = new List<QuandlDataset>() });
 
-                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", "0%");
+                //Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", "0%");
 
                 // Get first datasets page ordered
                 var datasetsReponse = DownloadDataset(1, database);

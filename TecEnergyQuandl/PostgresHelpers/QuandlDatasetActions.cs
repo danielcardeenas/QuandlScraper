@@ -55,6 +55,65 @@ namespace TecEnergyQuandl.PostgresHelpers
             }
         }
 
+        // Detects the newest data date
+        // Returns a list of pairs:
+        //  [date, datasetcode]
+        //  Ex. ['2016-10-21', 'AAPL']
+        //      ['2016-10-26', 'FB']
+        //      ...
+        public static List<Tuple<DateTime, string>> GetNewestImportedData(QuandlDatasetGroup datasetGroup)
+        {
+            // Query
+            string query = @"SELECT max(date) as date, datasetcode 
+                            FROM quandl." + datasetGroup.DatabaseCode + @" 
+                            GROUP BY datasetcode";
+
+            List<Tuple<DateTime, string>> datasetNewestDateList = new List<Tuple<DateTime, string>>();
+            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand(query))
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+                    cmd.Connection = conn;
+
+                    try
+                    {
+                        // Execute the query and obtain a result set
+                        NpgsqlDataReader dr = cmd.ExecuteReader();
+
+                        // Make tuple for each row
+                        // Add tuple to list
+                        while (dr.Read())
+                            datasetNewestDateList.Add(new Tuple<DateTime, string>(dr.GetDateTime(dr.GetOrdinal("date")), (string)dr["datasetcode"]));
+                    }
+                    catch (PostgresException ex)
+                    {
+                        if (ex.SqlState == "42P01")
+                        {
+                            // The table does not exists.
+                            // That means this is the first time importing this dataset group
+                            datasetNewestDateList.Add(new Tuple<DateTime, string>(DateTime.MinValue, datasetGroup.Datasets[0].DatasetCode));
+                        }
+                        else
+                        {
+                            conn.Close();
+                            Helpers.ExitWithError(ex.Message);
+                        }
+                    }
+
+                    //ConsoleInformer.PrintProgress("0C", "Querying imported datasets: ", "100%");
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+
+            return datasetNewestDateList;
+        }
+
         public static List<QuandlDatasetGroup> GetImportedDatasets()
         {
             // Query
@@ -121,7 +180,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                 count++;
                 Console.WriteLine("\nCreating query for datasets in group: [" + datasetGroup.DatabaseCode + "] (" + count + "/" + datasetsGroups.Count + ")");
                 InsertQuandlDatasetData(datasetGroup);
-                Utils.ConsoleInformer.PrintProgress("3C", "Finished inserting imported data for group :[" + datasetGroup.DatabaseCode + "]", "100%");
+                Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
             }
         }
 

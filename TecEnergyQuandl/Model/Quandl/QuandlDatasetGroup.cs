@@ -12,6 +12,7 @@ namespace TecEnergyQuandl.Model.Quandl
         public List<QuandlDataset> Datasets { get; set; }
 
         private List<string> queries;
+
         // Return extra columns
         // Ex. For WIKI:
         //  Date, Vol, High, Low, etc..
@@ -22,7 +23,7 @@ namespace TecEnergyQuandl.Model.Quandl
             return Datasets.ElementAt(0).ColumnNames;
         }   
 
-        // Not ready
+        // Creates query to insert dataset
         public string MakeInsertQuery()
         {
             string query = "INSERT INTO quandl.datasets (" + QuandlDataset.GetColumnsForQuery() + ") VALUES ";
@@ -45,16 +46,31 @@ namespace TecEnergyQuandl.Model.Quandl
             return query;
         }
 
+        // Creates query to insert data
         public string MakeInsertDataQuery()
         {
             string query = "INSERT INTO quandl." + DatabaseCode + "(" + GetColumnsForInsertDataQuery() + ") VALUES";
+
+            // Data elements to be formated for each thread
             int elementsPerThread = 500;
+
+            // Init where all queries generated will belong
             queries = new List<string>();
+
+            // Init taks
             var tasks = new List<Task>();
             foreach (QuandlDatasetData item in Datasets)
             {
-                tasks.AddRange(CreateQueryThreads(item, elementsPerThread));
+                // Create query only if needed
+                if (item.Data.Count > 0)
+                    tasks.AddRange(CreateQueryThreads(item, elementsPerThread));
+                else
+                    Utils.ConsoleInformer.Inform("Dataset [" + item.DatasetCode + "] is already in its last version");
             }
+
+            // If nothing to do just skip
+            if (tasks.Count <= 0)
+                return "";
 
             // Wait for all the threads to complete
             Task.WaitAll(tasks.ToArray());

@@ -18,15 +18,19 @@ namespace TecEnergyQuandl
             Console.ReadLine();
         }
 
+        // The program consists in 3 main steps
+        // You can comment whichever you want and program should still run smoothly
         private static async Task MainAsync()
         {
-            // Download databases
+            // 1. Download databases available
             //await BeginDownloadDatabases();
 
-            // Download Datasets
+            // 2. Download datasets 
+            //  Only the ones selected in quandl.databases (import = true)
             //await BeginDownloadDatasets();
 
-            // Download Datasets Data
+            // 3. Download datasets data
+            //  Only from the datasets selected in quandl.datasets (import = true)
             await BeginDownloadDatasetsData();
         }
 

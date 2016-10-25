@@ -27,6 +27,17 @@ namespace TecEnergyQuandl
             );
             Console.WriteLine();
 
+            Console.WriteLine("\nDetecting newest data available:");
+            foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
+            {
+                List<Tuple<DateTime, string>> datasetNewestDateList = PostgresHelpers.QuandlDatasetActions.GetNewestImportedData(datasetGroup);
+
+                // Item1 = Newest date of data
+                // Item2 = Dataset code
+                foreach (var tuple in datasetNewestDateList)
+                    datasetGroup.Datasets.Find(d => d.DatasetCode == tuple.Item2).NewestAvailableDate = tuple.Item1;
+            }
+
             int count = 0;
             foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
             {
@@ -39,8 +50,6 @@ namespace TecEnergyQuandl
                 // Request all datasets from group
                 await DownloadDatasetsDataAsync(datasetGroup, datasetGroup.Datasets.Count);
             }
-
-            //Console.WriteLine("");
 
             // Make datasets model tables
             PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetsData(datasetsGroups);
@@ -59,7 +68,9 @@ namespace TecEnergyQuandl
         {
             using (WebClient client = new WebClient())
             {
-                string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY));
+                string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode + 
+                                                                            "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY + 
+                                                                            "&start_date=" + dataset.NewestAvailableDate.AddDays(1).ToString("yyyy-MM-dd"))); // Add one day because I dont want to include the current newest in the json
                 DataResponse response =
                         JsonConvert.DeserializeObject<DataResponse>(data, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
