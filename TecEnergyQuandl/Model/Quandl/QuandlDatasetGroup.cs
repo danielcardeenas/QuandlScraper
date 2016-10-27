@@ -223,7 +223,10 @@ namespace TecEnergyQuandl.Model.Quandl
                 column == "AdjLow" ||
                 column == "AdjClose" ||
                 column == "AdjustedClose" ||
-                column == "AdjVolume"
+                column == "AdjVolume" ||
+                column == "Last" ||
+                column == "Settle" ||
+                column == "PrevDayOpenInterest"
                 )
                 return "NUMERIC";
 
