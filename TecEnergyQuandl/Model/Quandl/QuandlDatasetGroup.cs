@@ -33,7 +33,7 @@ namespace TecEnergyQuandl.Model.Quandl
             {
                 query += String.Format(@"({0}, '{1}', '{2}', '{3}', '{4}', to_date('{5}', 'YYYY-MM_DD'), to_date('{6}', 'YYYY-MM_DD'), '{7}', '{8}', '{9}', {10}, {11}, {12})",
                                     item.Id, item.DatasetCode, item.DatabaseCode, item.Name, item.Description, // 0 - 4
-                                    item.NewestAvailableDate.ToString("yyyy-MM-dd"), item.OldestAvailableDate.ToString("yyyy-MM-dd"), // 5 - 6
+                                    item.NewestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), item.OldestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), // 5 - 6
                                     string.Join(",", item.ColumnNames), // 7 
                                     item.Frequency, item.Type, // 8 - 9
                                     item.Premium, item.DatabaseId, item.Import); // 10 - 12

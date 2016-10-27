@@ -105,7 +105,7 @@ namespace TecEnergyQuandl.PostgresHelpers
             }
 
             query += "\nINSERT INTO quandl.databases (id, name, databasecode, description, datasetscount, downloads, premium, image, favorite)" +
-                    " SELECT id, name, databasecode, description, datasetscount, downloads, premium, image, favorite" +
+                    " SELECT distinct on (id) id, name, databasecode, description, datasetscount, downloads, premium, image, favorite" +
                     " FROM data" +
                     " WHERE NOT EXISTS (SELECT 1 FROM quandl.databases ds WHERE ds.Id = data.Id)";
             return query;
