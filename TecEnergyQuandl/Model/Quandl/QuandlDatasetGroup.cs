@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -91,10 +92,23 @@ namespace TecEnergyQuandl.Model.Quandl
             query += ")"; // Close (values ... ) 
             query += "\nINSERT INTO quandl." + DatabaseCode + "(" + GetColumnsForInsertDataQuery() + ")" +
                      " SELECT " + GetColumnsForInsertDataQuery() +
-                     " FROM data" +
-                     " WHERE NOT EXISTS (SELECT 1 FROM quandl." + DatabaseCode + " ds WHERE ds.Id = data.Id)";
+                     " FROM data";
+
+            if (HasColumnDate())
+            {
+                query += @" WHERE NOT EXISTS (
+                            SELECT 1 FROM quandl." + DatabaseCode + @" ds 
+                                WHERE ds.date = data.date AND
+                                      ds.datasetcode = data.datasetcode
+                            )";
+            }
 
             return query;
+        }
+
+        private bool HasColumnDate()
+        {
+            return ColumnNames().FirstOrDefault(x => x.ToLower() == "date") != null;
         }
 
         private int GetThreadsNeeded(int dataCount, int elementsPerThread)
@@ -161,9 +175,10 @@ namespace TecEnergyQuandl.Model.Quandl
 
         private string PrepareExtraColumnFormated(string column, int number)
         {
-            if (GetPostgresColumnType(column) == "TEXT" ||
-                GetPostgresColumnType(column) == "DATE")
+            if (GetPostgresColumnType(column) == "TEXT")
                 return "'{" + number + "}'";
+            else if (GetPostgresColumnType(column) == "DATE")
+                return "to_date('{" + number + "}', 'YYYY-MM_DD')";
             else
                 return "{" + number + "}";
         }
@@ -231,7 +246,48 @@ namespace TecEnergyQuandl.Model.Quandl
                 return "NUMERIC";
 
             return "TEXT";
+        }
 
+        private static string GetPostgresColumnType(dynamic data, string column)
+        {
+            Type type = data?.GetType() == null ? null : data?.GetType();
+
+            if (type == null)
+                return "TEXT";
+            if (IsNumericType(type))
+                return "NUMERIC";
+            if (Type.GetTypeCode(type.GetType()) == TypeCode.Boolean)
+                return "BOOL";
+            if (Type.GetTypeCode(type.GetType()) == TypeCode.String
+                && column.ToLower() == "date")
+                return "DATE";
+            if (Type.GetTypeCode(type.GetType()) == TypeCode.String
+                && column.ToLower() != "date")
+                return "TEXT";
+
+            else
+                return "TEXT";
+        }
+
+        public static bool IsNumericType(Type o)
+        {
+            switch (Type.GetTypeCode(o.GetType()))
+            {
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.Decimal:
+                case TypeCode.Double:
+                case TypeCode.Single:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

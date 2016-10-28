@@ -38,9 +38,7 @@ namespace TecEnergyQuandl
                 {
                     // Will only add those who dataset is imported
                     QuandlDataset dataset = datasetGroup.Datasets.Find(d => d.DatasetCode == tuple.Item2);
-                    if (dataset != null) { dataset.NewestAvailableDate = tuple.Item1; }
-
-                    //datasetGroup.Datasets.Find(d => d.DatasetCode == tuple.Item2).NewestAvailableDate = tuple.Item1;
+                    if (dataset != null) { dataset.LastFetch = tuple.Item1; }
                 }
             }
 
@@ -76,7 +74,7 @@ namespace TecEnergyQuandl
             {
                 string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode + 
                                                                             "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY + 
-                                                                            "&start_date=" + dataset.NewestAvailableDate.GetValueOrDefault(DateTime.Now).AddDays(1).ToString("yyyy-MM-dd"))); // Add one day because I dont want to include the current newest in the json
+                                                                            "&start_date=" + dataset.LastFetch.GetValueOrDefault(DateTime.MinValue).AddDays(1).ToString("yyyy-MM-dd"))); // Add one day because I dont want to include the current newest in the json
                 DataResponse response =
                         JsonConvert.DeserializeObject<DataResponse>(data, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 

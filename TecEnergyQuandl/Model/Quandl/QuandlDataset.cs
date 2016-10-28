@@ -31,6 +31,7 @@ namespace TecEnergyQuandl.Model.Quandl
         //public DateTime? LastFetchedDate { get; set; }
         public DateTime? NewestAvailableDate { get; set; }
         public DateTime? OldestAvailableDate { get; set; }
+        public DateTime? LastFetch { get; set; }
 
         private List<string> columnNames;
         public List<string> ColumnNames

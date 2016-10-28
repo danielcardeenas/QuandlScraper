@@ -63,17 +63,24 @@ namespace TecEnergyQuandl
         {
             using (WebClient client = new WebClient())
             {
-                var json = client.DownloadString("https://www.quandl.com/api/v3/datasets.json?database_code=" + database.DatabaseCode + "&sort_by=id&page=" + page + "&api_key=" + Utils.Constants.API_KEY);
-                DatasetsResponse response =
-                    JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
+                try {
+                    var json = client.DownloadString("https://www.quandl.com/api/v3/datasets.json?database_code=" + database.DatabaseCode + "&sort_by=id&page=" + page + "&api_key=" + Utils.Constants.API_KEY);
+                    DatasetsResponse response =
+                        JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
-                pagesSum++;
-                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
-                
-                // Add first page results and add it to its own group
-                datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
+                    pagesSum++;
+                    Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
 
-                return response;
+                    // Add first page results and add it to its own group
+                    datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
+
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error happened in page:" + page);
+                    return new DatasetsResponse();
+                }
             }
         }
 

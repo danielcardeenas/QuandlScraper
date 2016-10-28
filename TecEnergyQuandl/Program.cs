@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,11 +28,11 @@ namespace TecEnergyQuandl
 
             // 2. Download datasets 
             //  Only the ones selected in quandl.databases (import = true)
-            await BeginDownloadDatasets();
+            //await BeginDownloadDatasets();
 
             // 3. Download datasets data
             //  Only from the datasets selected in quandl.datasets (import = true)
-            //await BeginDownloadDatasetsData();
+            await BeginDownloadDatasetsData();
         }
 
         public static async Task BeginDownloadDatabases()
