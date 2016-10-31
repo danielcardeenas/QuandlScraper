@@ -1,12 +1,14 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using TecEnergyQuandl.Model.Quandl;
 using TecEnergyQuandl.Model.ResponseHelpers;
+using TecEnergyQuandl.Utils;
 
 namespace TecEnergyQuandl
 {
@@ -14,6 +16,7 @@ namespace TecEnergyQuandl
     {
         private static List<QuandlDatabase> databases;
         private static List<QuandlDatasetGroup> datasetsGroups = new List<QuandlDatasetGroup>();
+        private static List<Tuple<string, string>> errors = new List<Tuple<string, string>>();
 
         private static int pagesSum;
         public static async Task BeginDownloadDatasets()
@@ -47,9 +50,25 @@ namespace TecEnergyQuandl
                 // Download remaining datasets
                 if (datasetsReponse.Meta.TotalPages >= 2)
                     await DownloadDatasetsAsync(2, datasetsReponse.Meta.TotalPages, database);
+                    //DownloadDatasetsParallel(2, datasetsReponse.Meta.TotalPages, database);
 
                 Utils.ConsoleInformer.InformSimple("[DB] " + database.DatabaseCode + " Done. [" + count + "/" + databases.Count + "]");
                 Utils.ConsoleInformer.InformSimple("-------------------------------------");
+            }
+
+            // Check errors
+            if (errors.Count > 0)
+            {
+                Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
+
+                foreach(var error in errors)
+                {
+                    // Write
+                    using (StreamWriter sw = File.AppendText("log.txt"))
+                    {
+                        Utils.Helpers.Log(error.Item1, error.Item2, sw);
+                    }
+                }
             }
 
             // Manipulate data into database
@@ -59,26 +78,42 @@ namespace TecEnergyQuandl
             PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasets(datasetsGroups);
         }
 
+        /**
+         * Using Parallel class instead of Tasks for this
+         * Optimizes a little bit when fetching a lot of datasets
+         */
+        private static void DownloadDatasetsParallel(int fromPage, int toPage, QuandlDatabase database)
+        {
+            var pages = Enumerable.Range(fromPage, toPage - 1);
+            Parallel.ForEach(pages, i =>
+            {
+                DownloadDataset(i, database);
+            });
+        }
+
         private static DatasetsResponse DownloadDataset(int page, QuandlDatabase database)
         {
-            using (WebClient client = new WebClient())
+            using (PacientWebClient client = new PacientWebClient())
             {
-                try {
-                    var json = client.DownloadString("https://www.quandl.com/api/v3/datasets.json?database_code=" + database.DatabaseCode + "&sort_by=id&page=" + page + "&api_key=" + Utils.Constants.API_KEY);
+                try
+                {
+                    var json =  client.DownloadString("https://www.quandl.com/api/v3/datasets.json?database_code=" + database.DatabaseCode + "&sort_by=id&page=" + page + "&api_key=" + Utils.Constants.API_KEY);
                     DatasetsResponse response =
                         JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
                     pagesSum++;
                     Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
 
-                    // Add first page results and add it to its own group
+                    // Add it to its own group
                     datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
 
                     return response;
+
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    Console.WriteLine("Error happened in page:" + page);
+                    // Add error to inform and log later
+                    errors.Add(new Tuple<string, string> ("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message));
                     return new DatasetsResponse();
                 }
             }
@@ -86,27 +121,31 @@ namespace TecEnergyQuandl
 
         private static async Task DownloadDatasetsAsync(int fromPage, int toPage, QuandlDatabase database)
         {
-            // Fix console cursor position
-            //if (firstTime) { HotFixConsoleCursor(); }
-
             var pages = Enumerable.Range(fromPage, toPage - 1);
             await Task.WhenAll(pages.Select(i => DownloadDatasetsAsync(i, database)));
         }
 
         private static async Task DownloadDatasetsAsync(int page, QuandlDatabase database)
         {
-            using (WebClient client = new WebClient())
+            using (PacientWebClient client = new PacientWebClient())
             {
-                string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets.json?database_code=" + database.DatabaseCode + "&sort_by=id&page=" + page + "&api_key=" + Utils.Constants.API_KEY));
-                DatasetsResponse response =
-                        JsonConvert.DeserializeObject<DatasetsResponse>(data, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
+                try
+                {
+                    string json = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets.json?database_code=" + database.DatabaseCode + "&sort_by=id&page=" + page + "&api_key=" + Utils.Constants.API_KEY));
+                    DatasetsResponse response =
+                        JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
-                pagesSum++;
-                Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
+                    pagesSum++;
+                    Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
 
-                // Add it to its own group
-                datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
-                //datasets.AddRange(response.Datasets);
+                    // Add it to its own group
+                    datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
+                }
+                catch (Exception e)
+                {
+                    // Add error to inform and log later
+                    errors.Add(new Tuple<string, string>("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message));
+                }
             }
         }
     }

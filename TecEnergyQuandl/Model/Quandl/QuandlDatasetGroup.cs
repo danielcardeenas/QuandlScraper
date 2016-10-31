@@ -1,9 +1,13 @@
-﻿using System;
+﻿using Npgsql;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.Remoting;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using TecEnergyQuandl.Utils;
 
 namespace TecEnergyQuandl.Model.Quandl
 {
@@ -13,6 +17,7 @@ namespace TecEnergyQuandl.Model.Quandl
         public List<QuandlDataset> Datasets { get; set; }
 
         private List<string> queries;
+        private string queryFilePath;
 
         // Return extra columns
         // Ex. For WIKI:
@@ -22,34 +27,77 @@ namespace TecEnergyQuandl.Model.Quandl
         public List<string> ColumnNames()
         {
             return Datasets.ElementAt(0).ColumnNames;
-        }   
+        }
 
         // Creates query to insert dataset
-        public string MakeInsertQuery()
+        public string MakeInsertQueryFile()
         {
+            // Init bulk query file
+            InitFile();
+
+            // Inital part
             string query = @"WITH data(" + QuandlDataset.GetColumnsForQuery() + @") as ( values";
+            WriteToQueryFile(query);
 
-            var last = Datasets.Last();
-            foreach (QuandlDataset item in Datasets)
-            {
-                query += String.Format(@"({0}, '{1}', '{2}', '{3}', '{4}', to_date('{5}', 'YYYY-MM_DD'), to_date('{6}', 'YYYY-MM_DD'), '{7}', '{8}', '{9}', {10}, {11}, {12})",
-                                    item.Id, item.DatasetCode, item.DatabaseCode, item.Name, item.Description, // 0 - 4
-                                    item.NewestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), item.OldestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), // 5 - 6
-                                    string.Join(",", item.ColumnNames), // 7 
-                                    item.Frequency, item.Type, // 8 - 9
-                                    item.Premium, item.DatabaseId, item.Import); // 10 - 12
+            // Data elements to be formated for each thread
+            int elementsPerThread = 1000;
 
-                if (item != last)
-                    query += ",\n";
-                else
-                    query += ")";
-            }
+            // Init where all queries generated will belong
+            queries = new List<string>();
 
-            query += "\nINSERT INTO quandl.datasets (" + QuandlDataset.GetColumnsForQuery() + ")" +
+            // Init taks
+            var tasks = new List<Task>();
+
+            // Create query only if needed
+            if (Datasets.Count > 0)
+                tasks.AddRange(CreateQueryThreadsFile(elementsPerThread));
+            else
+                Utils.ConsoleInformer.Inform("Database [" + DatabaseCode + "] is already in its last version");
+
+            // If nothing to do just skip
+            if (tasks.Count <= 0)
+                return "";
+
+            // Wait for all the threads to complete
+            Task.WaitAll(tasks.ToArray());
+
+            // Remove last comma ","
+            RemoveLastCommaInQueryFile();
+
+            WriteToQueryFile(")"); // Close (values ... ) 
+
+            WriteToQueryFile("\nINSERT INTO quandl.datasets (" + QuandlDataset.GetColumnsForQuery() + ")" +
                     " SELECT " + QuandlDataset.GetColumnsForQuery() +
                     " FROM data" +
-                    " WHERE NOT EXISTS (SELECT 1 FROM quandl.datasets ds WHERE ds.Id = data.Id)";
-            return query;
+                    " WHERE NOT EXISTS (SELECT 1 FROM quandl.datasets ds WHERE ds.Id = data.Id)");
+
+            return queryFilePath;
+        }
+
+        // Creates query to insert dataset
+        public void MakeInsertQuery()
+        {
+            // Data elements to be formated for each thread
+            int elementsPerThread = 500;
+
+            // Init where all queries generated will belong
+            queries = new List<string>();
+
+            // Init taks
+            var tasks = new List<Task>();
+
+            // Create query only if needed
+            if (Datasets.Count > 0)
+                tasks.AddRange(CreateQueryThreads(elementsPerThread));
+            else
+                Utils.ConsoleInformer.Inform("Database [" + DatabaseCode + "] is already in its last version");
+
+            // If nothing to do just skip
+            if (tasks.Count <= 0)
+                return;
+
+            // Wait for all the threads to complete
+            Task.WaitAll(tasks.ToArray());
         }
 
         // Creates query to insert data
@@ -69,7 +117,7 @@ namespace TecEnergyQuandl.Model.Quandl
             {
                 // Create query only if needed
                 if (item.Data.Count > 0)
-                    tasks.AddRange(CreateQueryThreads(item, elementsPerThread));
+                    tasks.AddRange(CreateDataQueryThreads(item, elementsPerThread));
                 else
                     Utils.ConsoleInformer.Inform("Dataset [" + item.DatasetCode + "] is already in its last version");
             }
@@ -116,7 +164,7 @@ namespace TecEnergyQuandl.Model.Quandl
             return (int)Math.Ceiling(((double)dataCount / (double)elementsPerThread));
         }
 
-        private Task[] CreateQueryThreads(QuandlDatasetData item, int elementsPerThread)
+        private Task[] CreateDataQueryThreads(QuandlDatasetData item, int elementsPerThread)
         {
             var tasks = new List<Task>();
             int threadsNeeded = GetThreadsNeeded(item.Data.Count, elementsPerThread);
@@ -127,7 +175,7 @@ namespace TecEnergyQuandl.Model.Quandl
             {
                 int fromIndex = from;
                 int toIndex = fromIndex + elementsPerThread;
-                tasks.Add(Task.Factory.StartNew(() => CreatePartialQuery(item, fromIndex, toIndex)));
+                tasks.Add(Task.Factory.StartNew(() => CreatePartialDataQuery(item, fromIndex, toIndex)));
 
                 from += elementsPerThread;
             }
@@ -135,7 +183,169 @@ namespace TecEnergyQuandl.Model.Quandl
             return tasks.ToArray();
         }
 
-        private void CreatePartialQuery(QuandlDatasetData dataset, int from, int to)
+        private Task[] CreateQueryThreads(int elementsPerThread)
+        {
+            var tasks = new List<Task>();
+            int threadsNeeded = GetThreadsNeeded(Datasets.Count, elementsPerThread);
+
+            int remainingElements = Datasets.Count;
+            int from = 0;
+            for (int i = 0; i < threadsNeeded; i++)
+            {
+                int fromIndex = from;
+                int toIndex = fromIndex + elementsPerThread;
+                tasks.Add(Task.Factory.StartNew(() => CreatePartialQuery(fromIndex, toIndex)));
+
+                from += elementsPerThread;
+            }
+
+            return tasks.ToArray();
+        }
+
+        private Task[] CreateQueryThreadsFile(int elementsPerThread)
+        {
+            var tasks = new List<Task>();
+            int threadsNeeded = GetThreadsNeeded(Datasets.Count, elementsPerThread);
+
+            int remainingElements = Datasets.Count;
+            int from = 0;
+            for (int i = 0; i < threadsNeeded; i++)
+            {
+                int fromIndex = from;
+                int toIndex = fromIndex + elementsPerThread;
+                tasks.Add(Task.Factory.StartNew(() => CreatePartialQueryFile(fromIndex, toIndex)));
+
+                from += elementsPerThread;
+            }
+
+            return tasks.ToArray();
+        }
+
+        private void CreatePartialQueryFile(int from, int to)
+        {
+            if (to > Datasets.Count)
+                to = Datasets.Count;
+
+            string query = "";
+            for (int i = from; i < to; i++)
+            {
+                // Current
+                QuandlDataset item = Datasets[i];
+
+                // Base insert
+                query += String.Format(@"({0}, '{1}', '{2}', '{3}', '{4}', to_date('{5}', 'YYYY-MM_DD'), to_date('{6}', 'YYYY-MM_DD'), '{7}', '{8}', '{9}', {10}, {11}, {12})",
+                                    item.Id, item.DatasetCode, item.DatabaseCode, item.Name, item.Description, // 0 - 4
+                                    item.NewestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), item.OldestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), // 5 - 6
+                                    string.Join(",", item.ColumnNames), // 7 
+                                    item.Frequency, item.Type, // 8 - 9
+                                    item.Premium, item.DatabaseId, item.Import); // 10 - 12
+                query += ",";
+            }
+
+            // Write partial query to file
+            WriteToQueryFile(query);
+        }
+
+        private void InitFile()
+        {
+            // Create folder & file
+            Directory.CreateDirectory(DatabaseCode + "\\Datasets");
+
+            // Create file
+            string fileName = "ds" + DateTime.Now.ToString("yyyyMMdd") + ".txt";
+
+            queryFilePath = Path.Combine(DatabaseCode + "\\Datasets", fileName);
+
+            Console.WriteLine("Path to my file: {0}\n", queryFilePath);
+
+            if (!File.Exists(queryFilePath))
+                File.Create(queryFilePath);
+        }
+
+        private void WriteToQueryFile(string partial)
+        {
+            using (var mutex = new Mutex(false, "SHARED_INSERT_DATASETS"))
+            {
+                mutex.WaitOne();
+                // Start process file
+                // ===============================================
+                File.AppendAllText(queryFilePath, partial);
+
+                // End process file
+                // ===============================================
+                mutex.ReleaseMutex();
+            }
+        }
+
+        private void RemoveLastCommaInQueryFile()
+        {
+            try
+            {
+                FileStream fs = new FileStream(queryFilePath, FileMode.Open, FileAccess.ReadWrite);
+                fs.SetLength(fs.Length - 1);
+                fs.Close();
+            }
+            catch (Exception ex) { }
+        }
+
+        private void CreatePartialQuery(int from, int to)
+        {
+            if (to > Datasets.Count)
+                to = Datasets.Count;
+
+            string query = @"WITH data(" + QuandlDataset.GetColumnsForQuery() + @") as ( values";
+            //string query = "";
+            for (int i = from; i < to; i++)
+            {
+                // Current
+                QuandlDataset item = Datasets[i];
+
+                // Base insert
+                query += String.Format(@"({0}, '{1}', '{2}', '{3}', '{4}', to_date('{5}', 'YYYY-MM_DD'), to_date('{6}', 'YYYY-MM_DD'), '{7}', '{8}', '{9}', {10}, {11}, {12})",
+                                    item.Id, item.DatasetCode, item.DatabaseCode, item.Name, item.Description, // 0 - 4
+                                    item.NewestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), item.OldestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), // 5 - 6
+                                    string.Join(",", item.ColumnNames), // 7 
+                                    item.Frequency, item.Type, // 8 - 9
+                                    item.Premium, item.DatabaseId, item.Import); // 10 - 12
+
+                query += ",";
+            }
+
+            // Remove last comma ","
+            query = query.Remove(query.Length - 1);
+            query += ")"; // Close (values ... ) 
+
+            query += "\nINSERT INTO quandl.datasets (" + QuandlDataset.GetColumnsForQuery() + ")" +
+                    " SELECT " + QuandlDataset.GetColumnsForQuery() +
+                    " FROM data" +
+                    " WHERE NOT EXISTS (SELECT 1 FROM quandl.datasets ds WHERE ds.Id = data.Id)";
+
+            //Execute query
+            using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand())
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+
+                    cmd.Connection = conn;
+                    cmd.CommandText = query;
+                    try { cmd.ExecuteNonQuery(); }
+                    catch (PostgresException ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+        }
+
+        private void CreatePartialDataQuery(QuandlDatasetData dataset, int from, int to)
         {
             if (to > dataset.Data.Count)
                 to = dataset.Data.Count;

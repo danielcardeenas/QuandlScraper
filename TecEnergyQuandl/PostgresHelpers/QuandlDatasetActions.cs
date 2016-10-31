@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,13 +22,20 @@ namespace TecEnergyQuandl.PostgresHelpers
             foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
             {
                 count++;
-                InsertQuandlDatasets(datasetGroup);
+                datasetGroup.MakeInsertQuery();
                 ConsoleInformer.PrintProgress("3B", "Inserting [" + datasetGroup.DatabaseCode + "] datasets: ", Utils.Helpers.GetPercent(count, datasetsGroups.Count).ToString() + "%");
             }
         }
 
+        // Not used anymore
         public static void InsertQuandlDatasets(QuandlDatasetGroup datasetGroup)
         {
+            // Make query before oppening the connection to make sure it doesn't time out.
+            string queryFilePath = datasetGroup.MakeInsertQueryFile();
+
+            FileInfo file = new FileInfo(queryFilePath);
+            string query = file.OpenText().ReadToEnd();
+
             using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
             {
                 using (var cmd = new NpgsqlCommand())
@@ -35,9 +43,6 @@ namespace TecEnergyQuandl.PostgresHelpers
                     // Open connection
                     // ===============================================================
                     conn.Open();
-
-                    // Query
-                    string query = datasetGroup.MakeInsertQuery();
 
                     cmd.Connection = conn;
                     cmd.CommandText = query;

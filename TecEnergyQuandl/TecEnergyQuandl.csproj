@@ -76,6 +76,9 @@
     <Compile Include="Utils\Constants.cs" />
     <Compile Include="Utils\Converters.cs" />
     <Compile Include="Utils\Helpers.cs" />
+    <Compile Include="Utils\PacientWebClient.cs">
+      <SubType>Component</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

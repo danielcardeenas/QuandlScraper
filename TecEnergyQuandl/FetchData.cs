@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TecEnergyQuandl.Model.Quandl;
 using TecEnergyQuandl.Model.ResponseHelpers;
+using TecEnergyQuandl.Utils;
 
 namespace TecEnergyQuandl
 {
@@ -70,7 +71,7 @@ namespace TecEnergyQuandl
 
         private static async Task DownloadDatasetDataAsync(QuandlDataset dataset, int to)
         {
-            using (WebClient client = new WebClient())
+            using (PacientWebClient client = new PacientWebClient())
             {
                 string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode + 
                                                                             "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY + 
