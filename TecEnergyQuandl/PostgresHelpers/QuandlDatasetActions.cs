@@ -12,6 +12,9 @@ namespace TecEnergyQuandl.PostgresHelpers
 {
     public class QuandlDatasetActions
     {
+        /**
+         * Dataset info methos
+         */
         public static void InsertQuandlDatasets(List<QuandlDatasetGroup> datasetsGroups)
         {
             // Make datasets model tables
@@ -27,7 +30,7 @@ namespace TecEnergyQuandl.PostgresHelpers
             }
         }
 
-        // Not used anymore
+        [Obsolete("Use MakeInsertQuery() instead")]
         public static void InsertQuandlDatasets(QuandlDatasetGroup datasetGroup)
         {
             // Make query before oppening the connection to make sure it doesn't time out.
@@ -58,6 +61,66 @@ namespace TecEnergyQuandl.PostgresHelpers
                     conn.Close();
                 }
             }
+        }
+
+        /**
+         * Dataset data methos
+         */
+        public static List<QuandlDatasetGroup> GetImportedDatasets()
+        {
+            // This query does not takes in count if the de dataset's database is imported too
+            //string query = @"SELECT " + QuandlDataset.GetColumnsForQuery() + " " +
+            //                        @"FROM quandl.datasets
+            //                        WHERE import = true";
+
+            // Query
+            string query = @"SELECT " + QuandlDataset.GetColumnsForQuerySuffixed("ds") + @" 
+                            FROM quandl.databases INNER JOIN quandl.datasets ds ON (quandl.databases.databasecode = ds.databasecode)
+                            WHERE quandl.databases.import = true AND ds.import = true";
+
+            List<QuandlDatasetGroup> datasetsGroups = new List<QuandlDatasetGroup>();
+            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand(query))
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+                    cmd.Connection = conn;
+
+                    try
+                    {
+                        // Execute the query and obtain a result set
+                        NpgsqlDataReader dr = cmd.ExecuteReader();
+
+                        // Each row
+                        while (dr.Read())
+                        {
+                            // Add each dataset to its own group (Database code)
+                            QuandlDataset dataset = QuandlDataset.MakeQuandlDataset(dr);
+
+                            // If group doesnt exists, create it
+                            if (!datasetsGroups.Exists(d => d.DatabaseCode == dataset.DatabaseCode))
+                                datasetsGroups.Add(new QuandlDatasetGroup() { DatabaseCode = dataset.DatabaseCode, Datasets = new List<QuandlDataset>() });
+
+                            datasetsGroups.Find(d => d.DatabaseCode == dataset.DatabaseCode).Datasets.Add(dataset);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
+
+                    ConsoleInformer.PrintProgress("0C", "Querying imported datasets: ", "100%");
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+
+            return datasetsGroups;
         }
 
         // Detects the newest data date
@@ -119,63 +182,6 @@ namespace TecEnergyQuandl.PostgresHelpers
             return datasetNewestDateList;
         }
 
-        public static List<QuandlDatasetGroup> GetImportedDatasets()
-        {
-            // This query does not takes in count if the de dataset's database is imported too
-            //string query = @"SELECT " + QuandlDataset.GetColumnsForQuery() + " " +
-            //                        @"FROM quandl.datasets
-            //                        WHERE import = true";
-
-            // Query
-            string query = @"SELECT " + QuandlDataset.GetColumnsForQuerySuffixed("ds") + @" 
-                            FROM quandl.databases INNER JOIN quandl.datasets ds ON (quandl.databases.databasecode = ds.databasecode)
-                            WHERE quandl.databases.import = true AND ds.import = true";
-
-            List<QuandlDatasetGroup> datasetsGroups = new List<QuandlDatasetGroup>();
-            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
-            {
-                using (var cmd = new NpgsqlCommand(query))
-                {
-                    // Open connection
-                    // ===============================================================
-                    conn.Open();
-                    cmd.Connection = conn;
-
-                    try
-                    {
-                        // Execute the query and obtain a result set
-                        NpgsqlDataReader dr = cmd.ExecuteReader();
-
-                        // Each row
-                        while (dr.Read())
-                        {
-                            // Add each dataset to its own group (Database code)
-                            QuandlDataset dataset = QuandlDataset.MakeQuandlDataset(dr);
-
-                            // If group doesnt exists, create it
-                            if (!datasetsGroups.Exists(d => d.DatabaseCode == dataset.DatabaseCode))
-                                datasetsGroups.Add(new QuandlDatasetGroup() { DatabaseCode = dataset.DatabaseCode, Datasets = new List<QuandlDataset>() });
-
-                            datasetsGroups.Find(d => d.DatabaseCode == dataset.DatabaseCode).Datasets.Add(dataset);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        conn.Close();
-                        Helpers.ExitWithError(ex.Message);
-                    }
-
-                    ConsoleInformer.PrintProgress("0C", "Querying imported datasets: ", "100%");
-
-                    // Close connection
-                    // ===============================================================
-                    conn.Close();
-                }
-            }
-
-            return datasetsGroups;
-        }
-
         public static void InsertQuandlDatasetsData(List<QuandlDatasetGroup> datasetsGroups)
         {
             // Make datasets model tables
@@ -189,13 +195,15 @@ namespace TecEnergyQuandl.PostgresHelpers
             {
                 count++;
                 Console.WriteLine("\nCreating query for datasets in group: [" + datasetGroup.DatabaseCode + "] (" + count + "/" + datasetsGroups.Count + ")");
-                InsertQuandlDatasetData(datasetGroup);
+                datasetGroup.MakeInsertDataQuery();
                 Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
             }
         }
 
+        [Obsolete("Use MakeInsertDataQuery() instead")]
         private static void InsertQuandlDatasetData(QuandlDatasetGroup datasetGroup)
         {
+            string query = "";
             using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
             {
                 using (var cmd = new NpgsqlCommand())
@@ -205,7 +213,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                     conn.Open();
 
                     // Query
-                    string query = datasetGroup.MakeInsertDataQuery();
+                    datasetGroup.MakeInsertDataQuery();
 
                     cmd.Connection = conn;
                     cmd.CommandText = query;

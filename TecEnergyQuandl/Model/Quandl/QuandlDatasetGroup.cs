@@ -101,10 +101,8 @@ namespace TecEnergyQuandl.Model.Quandl
         }
 
         // Creates query to insert data
-        public string MakeInsertDataQuery()
+        public void MakeInsertDataQuery()
         {
-            string query = @"WITH data(" + GetColumnsForInsertDataQuery() + @") as ( values";
-
             // Data elements to be formated for each thread
             int elementsPerThread = 500;
 
@@ -124,34 +122,10 @@ namespace TecEnergyQuandl.Model.Quandl
 
             // If nothing to do just skip
             if (tasks.Count <= 0)
-                return "";
+                return;
 
             // Wait for all the threads to complete
             Task.WaitAll(tasks.ToArray());
-
-            // Join all the querys
-            string values = String.Join("\n", queries);
-
-            // Remove last comma ","
-            values = values.Remove(values.Length - 1);
-
-            // Join "insert into... values" + "(...)"
-            query += values;
-            query += ")"; // Close (values ... ) 
-            query += "\nINSERT INTO quandl." + DatabaseCode + "(" + GetColumnsForInsertDataQuery() + ")" +
-                     " SELECT " + GetColumnsForInsertDataQuery() +
-                     " FROM data";
-
-            if (HasColumnDate())
-            {
-                query += @" WHERE NOT EXISTS (
-                            SELECT 1 FROM quandl." + DatabaseCode + @" ds 
-                                WHERE ds.date = data.date AND
-                                      ds.datasetcode = data.datasetcode
-                            )";
-            }
-
-            return query;
         }
 
         private bool HasColumnDate()
@@ -347,10 +321,11 @@ namespace TecEnergyQuandl.Model.Quandl
 
         private void CreatePartialDataQuery(QuandlDatasetData dataset, int from, int to)
         {
+            string query = @"WITH data(" + GetColumnsForInsertDataQuery() + @") as ( values";
+
             if (to > dataset.Data.Count)
                 to = dataset.Data.Count;
 
-            string query = "";
             for (int i = from; i < to; i++)
             {
                 // Current
@@ -367,7 +342,46 @@ namespace TecEnergyQuandl.Model.Quandl
                                 data);
             }
 
-            queries.Add(query);
+            // Remove last comma ","
+            query = query.Remove(query.Length - 1);
+
+            query += ")"; // Close (values ... ) 
+            query += "\nINSERT INTO quandl." + DatabaseCode + "(" + GetColumnsForInsertDataQuery() + ")" +
+                     " SELECT " + GetColumnsForInsertDataQuery() +
+                     " FROM data";
+
+            if (HasColumnDate())
+            {
+                query += @" WHERE NOT EXISTS (
+                            SELECT 1 FROM quandl." + DatabaseCode + @" ds 
+                                WHERE ds.date = data.date AND
+                                      ds.datasetcode = data.datasetcode
+                            )";
+            }
+
+            // Execute query
+            using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand())
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+
+                    cmd.Connection = conn;
+                    cmd.CommandText = query;
+                    try { cmd.ExecuteNonQuery(); }
+                    catch (PostgresException ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
         }
 
         private string FormatExtraColumns(int fromNumber)
@@ -390,7 +404,7 @@ namespace TecEnergyQuandl.Model.Quandl
             else if (GetPostgresColumnType(column) == "DATE")
                 return "to_date('{" + number + "}', 'YYYY-MM_DD')";
             else
-                return "{" + number + "}";
+                return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
         }
 
         private string GetColumnsForInsertDataQuery()

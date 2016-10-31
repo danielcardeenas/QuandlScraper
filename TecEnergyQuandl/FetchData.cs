@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -14,6 +15,7 @@ namespace TecEnergyQuandl
     public static class FetchData
     {
         private static List<QuandlDatasetGroup> datasetsGroups;
+        private static List<Tuple<string, string>> errors = new List<Tuple<string, string>>();
 
         private static int datasetsFetched = 0;
         public static async Task BeginDownloadData()
@@ -56,6 +58,21 @@ namespace TecEnergyQuandl
                 await DownloadDatasetsDataAsync(datasetGroup, datasetGroup.Datasets.Count);
             }
 
+            // Check errors
+            if (errors.Count > 0)
+            {
+                Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
+
+                foreach (var error in errors)
+                {
+                    // Write
+                    using (StreamWriter sw = File.AppendText("log.txt"))
+                    {
+                        Utils.Helpers.Log(error.Item1, error.Item2, sw);
+                    }
+                }
+            }
+
             // Make datasets model tables
             PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetsData(datasetsGroups);
         }
@@ -73,20 +90,28 @@ namespace TecEnergyQuandl
         {
             using (PacientWebClient client = new PacientWebClient())
             {
-                string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode + 
-                                                                            "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY + 
+                try
+                {
+                    string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode +
+                                                                            "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY +
                                                                             "&start_date=" + dataset.LastFetch.GetValueOrDefault(DateTime.MinValue).AddDays(1).ToString("yyyy-MM-dd"))); // Add one day because I dont want to include the current newest in the json
-                DataResponse response =
-                        JsonConvert.DeserializeObject<DataResponse>(data, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
+                    DataResponse response =
+                            JsonConvert.DeserializeObject<DataResponse>(data, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
-                QuandlDatasetData datasetData = response.DatasetData;
-                datasetData.SetBaseDataset(dataset);
+                    QuandlDatasetData datasetData = response.DatasetData;
+                    datasetData.SetBaseDataset(dataset);
 
-                datasetsFetched++;
-                Utils.ConsoleInformer.PrintProgress("1C", "Fetching dataset [" + dataset.DatasetCode + "]: ", Utils.Helpers.GetPercent(datasetsFetched, to).ToString() + "%");
+                    datasetsFetched++;
+                    Utils.ConsoleInformer.PrintProgress("1C", "Fetching dataset [" + dataset.DatasetCode + "]: ", Utils.Helpers.GetPercent(datasetsFetched, to).ToString() + "%");
 
-                // Replace old uncomplete dataset with new one
-                ReplaceCompleteDataset(datasetData);
+                    // Replace old uncomplete dataset with new one
+                    ReplaceCompleteDataset(datasetData);
+                }
+                catch (Exception e)
+                {
+                    // Add error to inform and log later
+                    errors.Add(new Tuple<string, string>("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message));
+                }
             }
         }
 

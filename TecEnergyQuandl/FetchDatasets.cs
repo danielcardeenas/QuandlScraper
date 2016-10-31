@@ -78,19 +78,6 @@ namespace TecEnergyQuandl
             PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasets(datasetsGroups);
         }
 
-        /**
-         * Using Parallel class instead of Tasks for this
-         * Optimizes a little bit when fetching a lot of datasets
-         */
-        private static void DownloadDatasetsParallel(int fromPage, int toPage, QuandlDatabase database)
-        {
-            var pages = Enumerable.Range(fromPage, toPage - 1);
-            Parallel.ForEach(pages, i =>
-            {
-                DownloadDataset(i, database);
-            });
-        }
-
         private static DatasetsResponse DownloadDataset(int page, QuandlDatabase database)
         {
             using (PacientWebClient client = new PacientWebClient())
