@@ -1,4 +1,6 @@
 # QuandlScraper
 Fetches stuff
 
-<img src="http://i.imgur.com/F61OOq1.png?1" />
+###Dependecies
++ [Npgsql](http://www.npgsql.org/install.html)
++ [JSON.NET](http://www.newtonsoft.com/json)
