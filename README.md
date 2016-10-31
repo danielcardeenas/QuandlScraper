@@ -32,7 +32,7 @@ The program consists in 3 key tasks.
 Each one is independient from each other. So you can skip a task (commenting the code line) and the program will still run fine.
 
 1. [Fetch Databases available] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L28)
-2. [Fetch Datasets available] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L28) <sub>(from selected databases downloaded in step 1)</sub>
-3. [Fetch Data] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L28) <sub>(from selected databases downloaded in step 2)</sub>
+2. [Fetch Datasets available] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L32) <sub>(from selected databases downloaded in step 1)</sub>
+3. [Fetch Data] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L36) <sub>(from selected databases downloaded in step 2)</sub>
 
 If something unexpected happens a file `log.txt` (inside same directory where the excutable is running) will be created with the information, however, the program will do his best to handle the error and keep working.
