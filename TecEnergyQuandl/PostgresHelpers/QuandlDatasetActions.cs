@@ -27,7 +27,6 @@ namespace TecEnergyQuandl.PostgresHelpers
                 count++;
                 try
                 {
-                    throw new Exception();
                     datasetGroup.MakeInsertQuery();
                     ConsoleInformer.PrintProgress("3B", "Inserting [" + datasetGroup.DatabaseCode + "] datasets: ", Utils.Helpers.GetPercent(count, datasetsGroups.Count).ToString() + "%");
                 }
