@@ -197,6 +197,10 @@ namespace TecEnergyQuandl.PostgresHelpers
         // Where all the datasets data will go
         public static void CreateQuandlDatasetDataTable(QuandlDatasetGroup datasetGroup)
         {
+            // Do not make data tables without date colum
+            if (!datasetGroup.HasColumnDate())
+                return;
+
             using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
             {
                 using (var cmd = new NpgsqlCommand())
@@ -207,14 +211,14 @@ namespace TecEnergyQuandl.PostgresHelpers
 
                     // Query
                     string query = @"CREATE TABLE quandl." + datasetGroup.DatabaseCode + @"(
-                                        Id                   BIGSERIAL PRIMARY KEY NOT NULL,
                                         DatasetCode          TEXT,
                                         DatabaseCode         TEXT,
                                         Name                 TEXT    NOT NULL,
                                         Transform            TEXT,
                                         DatabaseId           BIGINT," +
                                         // Column names [specific data]
-                                        datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @"
+                                        datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
+                                        PRIMARY KEY(" + string.Join(", ", datasetGroup.PrimaryKeys()) + @") 
                                     );";
 
                     cmd.Connection = conn;

@@ -15,7 +15,6 @@ namespace TecEnergyQuandl.Model.Quandl
     {
         public string DatabaseCode { get; set; }
         public List<QuandlDataset> Datasets { get; set; }
-
         private List<string> queries;
         private string queryFilePath;
 
@@ -27,6 +26,19 @@ namespace TecEnergyQuandl.Model.Quandl
         public List<string> ColumnNames()
         {
             return Datasets.ElementAt(0).ColumnNames;
+        }
+
+        // Detects primary keys
+        public string[] PrimaryKeys()
+        {
+            List<string> primaryKeys = new List<string>();
+
+            if (HasColumnDate())
+                primaryKeys.Add("date");
+
+            primaryKeys.Add("datasetcode");
+
+            return primaryKeys.ToArray();
         }
 
         // Creates query to insert dataset
@@ -128,7 +140,7 @@ namespace TecEnergyQuandl.Model.Quandl
             Task.WaitAll(tasks.ToArray());
         }
 
-        private bool HasColumnDate()
+        public bool HasColumnDate()
         {
             return ColumnNames().FirstOrDefault(x => x.ToLower() == "date") != null;
         }
@@ -354,7 +366,7 @@ namespace TecEnergyQuandl.Model.Quandl
             {
                 query += @" WHERE NOT EXISTS (
                             SELECT 1 FROM quandl." + DatabaseCode + @" ds 
-                                WHERE ds.date = data.date AND
+                                WHERE ds.date::date = data.date::date AND
                                       ds.datasetcode = data.datasetcode
                             )";
             }
@@ -374,7 +386,24 @@ namespace TecEnergyQuandl.Model.Quandl
                     catch (PostgresException ex)
                     {
                         conn.Close();
-                        Helpers.ExitWithError(ex.Message);
+                        using (var mutex = new Mutex(false, "SHARED_INSERT_DATASETS"))
+                        {
+                            mutex.WaitOne();
+                            // Write
+                            // ===============================================
+                            using (StreamWriter sw = File.AppendText("log.txt"))
+                            {
+                                Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
+                                Utils.Helpers.Log("Failed to insert data chunk.\n-------------------\nStart query:\n" + query + "\n-------------------\nEnd query\n", 
+                                    ex.Message, sw);
+                            }
+
+                            // End process file
+                            // ===============================================
+                            mutex.ReleaseMutex();
+                        }
+
+                        //Helpers.ExitWithError(ex.Message);
                     }
 
                     // Close connection

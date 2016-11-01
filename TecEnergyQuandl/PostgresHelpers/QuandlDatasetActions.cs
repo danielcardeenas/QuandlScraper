@@ -25,8 +25,23 @@ namespace TecEnergyQuandl.PostgresHelpers
             foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
             {
                 count++;
-                datasetGroup.MakeInsertQuery();
-                ConsoleInformer.PrintProgress("3B", "Inserting [" + datasetGroup.DatabaseCode + "] datasets: ", Utils.Helpers.GetPercent(count, datasetsGroups.Count).ToString() + "%");
+                try
+                {
+                    throw new Exception();
+                    datasetGroup.MakeInsertQuery();
+                    ConsoleInformer.PrintProgress("3B", "Inserting [" + datasetGroup.DatabaseCode + "] datasets: ", Utils.Helpers.GetPercent(count, datasetsGroups.Count).ToString() + "%");
+                }
+                catch (Exception ex)
+                {
+                    // Write
+                    Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
+
+                    using (StreamWriter sw = File.AppendText("log.txt"))
+                    {
+                        Utils.Helpers.Log("Something worng happened when trying to insert [" + datasetGroup.DatabaseCode + "] datasets. Check log", 
+                                        ex.Message, sw);
+                    }
+                }
             }
         }
 
