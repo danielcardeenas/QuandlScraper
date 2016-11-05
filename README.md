@@ -1,5 +1,6 @@
 # Quandl Scraper
 Downloads Quandl Data (Bulks) without a premium account and import it to a PostgreSQL (+ 9.2) database.
+
 Everything gets _structured N I C E L Y_
 
 ###Dependecies
