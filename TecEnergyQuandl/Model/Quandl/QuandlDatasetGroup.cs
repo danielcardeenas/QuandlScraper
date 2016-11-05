@@ -349,6 +349,9 @@ namespace TecEnergyQuandl.Model.Quandl
                                 dataset.Transform, // 3
                                 dataset.DatabaseId); // 4
 
+                // Mod data
+                MakeDateTimeStamp(ref data);
+
                 // Extra columns
                 query += String.Format(FormatExtraColumns(0) + " ),",
                                 data);
@@ -413,6 +416,13 @@ namespace TecEnergyQuandl.Model.Quandl
             }
         }
 
+        private void MakeDateTimeStamp(ref object[] data)
+        {
+            var dateIndex = ColumnNames().FindIndex(a => a.ToLower() == "date");
+            DateTime myDate = DateTime.Parse(data[dateIndex].ToString());
+            data[dateIndex] = myDate.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
         private string FormatExtraColumns(int fromNumber)
         {
             string extraColumns = "";
@@ -428,10 +438,11 @@ namespace TecEnergyQuandl.Model.Quandl
 
         private string PrepareExtraColumnFormated(string column, int number)
         {
-            if (GetPostgresColumnType(column) == "TEXT")
+            if (GetPostgresColumnType(column).ToLower() == "text")
                 return "'{" + number + "}'";
-            else if (GetPostgresColumnType(column) == "DATE")
-                return "to_date('{" + number + "}', 'YYYY-MM_DD')";
+            else if (GetPostgresColumnType(column).ToLower() == "timestamp")
+                //return "to_date('{" + number + "}', 'YYYY-MM-DD')";
+                return "to_timestamp('{" + number + "}', 'YYYY-MM-DD hh24:mi:ss')";
             else
                 return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
         }
@@ -475,26 +486,26 @@ namespace TecEnergyQuandl.Model.Quandl
 
         private string GetPostgresColumnType(string column)
         {
-            if (column == "Date")
-                return "DATE";
-            if (column == "Value")
+            if (column.ToLower() == "date")
+                return "TIMESTAMP";
+            if (column.ToLower() == "value")
                 return "NUMERIC";
-            if (column == "Open" ||
-                column == "High" ||
-                column == "Low" ||
-                column == "Close" ||
-                column == "Volume" ||
-                column == "ExDividend" ||
-                column == "SplitRatio" ||
-                column == "AdjOpen" ||
-                column == "AdjHigh" ||
-                column == "AdjLow" ||
-                column == "AdjClose" ||
-                column == "AdjustedClose" ||
-                column == "AdjVolume" ||
-                column == "Last" ||
-                column == "Settle" ||
-                column == "PrevDayOpenInterest"
+            if (column.ToLower() == "open" ||
+                column.ToLower() == "high" ||
+                column.ToLower() == "low" ||
+                column.ToLower() == "close" ||
+                column.ToLower() == "volume" ||
+                column.ToLower() == "exdividend" ||
+                column.ToLower() == "splitratio" ||
+                column.ToLower() == "adjopen" ||
+                column.ToLower() == "adjhigh" ||
+                column.ToLower() == "adjlow" ||
+                column.ToLower() == "adjclose" ||
+                column.ToLower() == "adjustedclose" ||
+                column.ToLower() == "adjvolume" ||
+                column.ToLower() == "last" ||
+                column.ToLower() == "settle" ||
+                column.ToLower() == "prevdayopeninterest"
                 )
                 return "NUMERIC";
 
