@@ -44,7 +44,8 @@ namespace TecEnergyQuandl.Model.Quandl
                     .Replace("'", "")
                     .Replace("-", "")
                     .Replace(".", "")
-                    .Replace(" ", ""))
+                    .Replace(" ", "")
+                    .Replace("/", "-"))
                     .ToList();
             }
         }
