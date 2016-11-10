@@ -15,7 +15,7 @@ namespace TecEnergyQuandl.Model.Quandl
     {
         public string DatabaseCode { get; set; }
         public List<QuandlDataset> Datasets { get; set; }
-        private List<string> queries;
+        //private List<string> queries;
         private string queryFilePath;
 
         // Return extra columns
@@ -55,7 +55,7 @@ namespace TecEnergyQuandl.Model.Quandl
             int elementsPerThread = 1000;
 
             // Init where all queries generated will belong
-            queries = new List<string>();
+            //queries = new List<string>();
 
             // Init taks
             var tasks = new List<Task>();
@@ -93,7 +93,7 @@ namespace TecEnergyQuandl.Model.Quandl
             int elementsPerThread = 500;
 
             // Init where all queries generated will belong
-            queries = new List<string>();
+            //queries = new List<string>();
 
             // Init taks
             var tasks = new List<Task>();
@@ -119,7 +119,7 @@ namespace TecEnergyQuandl.Model.Quandl
             int elementsPerThread = 500;
 
             // Init where all queries generated will belong
-            queries = new List<string>();
+            //queries = new List<string>();
 
             // Init taks
             var tasks = new List<Task>();
@@ -441,8 +441,9 @@ namespace TecEnergyQuandl.Model.Quandl
             if (GetPostgresColumnType(column).ToLower() == "text")
                 return "'{" + number + "}'";
             else if (GetPostgresColumnType(column).ToLower() == "timestamp")
-                //return "to_date('{" + number + "}', 'YYYY-MM-DD')";
                 return "to_timestamp('{" + number + "}', 'YYYY-MM-DD hh24:mi:ss')";
+            else if (GetPostgresColumnType(column).ToLower() == "date")
+                return "to_date('{" + number + "}', 'YYYY-MM-DD')";
             else
                 return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
         }

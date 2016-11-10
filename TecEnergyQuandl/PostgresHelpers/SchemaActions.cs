@@ -305,8 +305,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                     conn.Open();
 
                     // Query
-                    string query = @"CREATE TABLE quandl.""" + datatable.Name + @"""(
-                                        Name                 TEXT    NOT NULL," +
+                    string query = @"CREATE TABLE quandl.""" + datatable.Name + @"""(" +
                                         // Column names [specific data]
                                         datatable.MakeExtraColumnsWithDataType() + @"
                                     );";
@@ -319,7 +318,10 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
-                            ConsoleInformer.Inform("Table model [" + datatable.Name + "] already exists. Using it");
+                            ConsoleInformer.Inform("Table model [" + datatable.Name + "] already exists. Truncating...");
+                            cmd.CommandText = @"TRUNCATE TABLE quandl.""" + datatable.Name + @"""";
+                            try { cmd.ExecuteNonQuery(); }
+                            catch (PostgresException exception) { conn.Close(); Helpers.ExitWithError(exception.Message); }
                         }
                         else { conn.Close(); Helpers.ExitWithError(ex.Message); }
                     }

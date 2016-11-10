@@ -121,9 +121,9 @@ namespace TecEnergyQuandl.PostgresHelpers
             foreach (QuandlDatatable datatable in datatables)
             {
                 count++;
-                //Console.WriteLine("\nCreating query for datasets in group: [" + datasetGroup.DatabaseCode + "] (" + count + "/" + datasetsGroups.Count + ")");
-                //datasetGroup.MakeInsertDataQuery();
-                //Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
+                Console.WriteLine("\nCreating query for datatable: [" + datatable.Name + "] (" + count + "/" + datatables.Count + ")");
+                datatable.MakeInsertQuery();
+                Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datatable.Name + "]: ", "100%");
             }
         }
     }

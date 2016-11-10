@@ -35,5 +35,37 @@ namespace TecEnergyQuandl.Model.Quandl
 
             return "text";
         }
+
+        public string GetPostgreswFormatForColumn(int position)
+        {
+            if (IsText())
+                return "'{" + position + "}'";
+            else if (IsNumeric())
+                return "cast(coalesce(nullif('{" + position + "}',''),null) as float)";
+            else if (GetPostgresType().ToLower() == "timestamp")
+                return "to_timestamp('{" + position + "}', 'YYYY-MM-DD hh24:mi:ss')";
+            else if (GetPostgresType().ToLower() == "date")
+                return "to_date('{" + position + "}', 'YYYY-MM-DD')";
+
+            // Default is text
+            else
+                return "'{" + position + "}'";
+        }
+
+        public bool IsText()
+        {
+            if (GetPostgresType().ToLower() == "text")
+                return true;
+            else
+                return false;
+        }
+
+        public bool IsNumeric()
+        {
+            if (GetPostgresType().ToLower() == "numeric")
+                return true;
+            else
+                return false;
+        }
     }
 }

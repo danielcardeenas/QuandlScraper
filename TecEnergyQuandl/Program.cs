@@ -34,7 +34,7 @@ namespace TecEnergyQuandl
 
             // 3. Download datasets data
             //  Only from the datasets selected in quandl.datasets (import = true)
-            await BeginDownloadDatasetsData();
+            //await BeginDownloadDatasetsData();
 
             // 4. Download datatables
             BeginDownloadDatatables();

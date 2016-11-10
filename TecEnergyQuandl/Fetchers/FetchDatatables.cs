@@ -38,7 +38,7 @@ namespace TecEnergyQuandl.Fetchers
                 var datatableResponse = DownloadDatatable(datatable);
 
                 // Complete dataset
-                datatable.Data = new List<object>();
+                datatable.Data = new List<object[]>();
                 datatable.Columns = new List<QuandlColumn>();
 
                 datatable.Data.AddRange(datatableResponse.Datatable.Data);
