@@ -214,7 +214,6 @@ namespace TecEnergyQuandl.PostgresHelpers
             }
         }
 
-        [Obsolete("Use MakeInsertDataQuery() instead")]
         private static void InsertQuandlDatasetData(QuandlDatasetGroup datasetGroup)
         {
             string query = "";

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TecEnergyQuandl.Model.Quandl;
 using TecEnergyQuandl.Model.ResponseHelpers;
@@ -89,7 +90,17 @@ namespace TecEnergyQuandl
                         JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
                     pagesSum++;
-                    Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
+                    using (var mutex = new Mutex(false, "SHARED_FETCH_DATASETS"))
+                    {
+                        mutex.WaitOne();
+                        // Start process
+                        // ===============================================
+                        Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
+
+                        // End process
+                        // ===============================================
+                        mutex.ReleaseMutex();
+                    }
 
                     // Add it to its own group
                     datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
@@ -123,7 +134,17 @@ namespace TecEnergyQuandl
                         JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
                     pagesSum++;
-                    Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
+                    using (var mutex = new Mutex(false, "SHARED_FETCH_DATASETS"))
+                    {
+                        mutex.WaitOne();
+                        // Start process
+                        // ===============================================
+                        Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
+
+                        // End process
+                        // ===============================================
+                        mutex.ReleaseMutex();
+                    }
 
                     // Add it to its own group
                     datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);

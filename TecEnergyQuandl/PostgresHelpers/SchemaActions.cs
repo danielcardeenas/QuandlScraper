@@ -242,5 +242,95 @@ namespace TecEnergyQuandl.PostgresHelpers
                 }
             }
         }
+
+        // Create datatable table
+        public static void CreateQuandlDatatablesTable()
+        {
+            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand())
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+
+                    // Query
+                    string query = @"CREATE TABLE quandl.datatables(
+                                       Name             TEXT    PRIMARY KEY NOT NULL,
+                                       Import           BOOL    DEFAULT FALSE
+                                    );";
+
+                    cmd.Connection = conn;
+                    cmd.CommandText = query;
+                    try { cmd.ExecuteNonQuery(); }
+                    catch (PostgresException ex)
+                    {
+                        //Console.WriteLine(ex.Message);
+                        if (ex.SqlState == "42P07")
+                        {
+                            ConsoleInformer.Inform("QuandlDatatables table already exists. Using it");
+                            //cmd.CommandText = "TRUNCATE TABLE databases";
+                            //try { cmd.ExecuteNonQuery(); }
+                            //catch (PostgresException exception)
+                            //{
+                            //    conn.Close(); Helpers.ExitWithError(exception.Message);
+                            //}
+                        }
+                        else { conn.Close(); Helpers.ExitWithError(ex.Message); }
+                    }
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+
+                    // Inform
+                    ConsoleInformer.PrintProgress("0D", "Creating Datatables Table schema", "100%");
+                }
+            }
+        }
+
+        // Create datatables data model
+        public static void CreateQuandlDatatableModelTable(QuandlDatatable datatable)
+        {
+            // Do not make data tables without name
+            if (String.IsNullOrWhiteSpace(datatable.Name))
+                return;
+
+            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand())
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+
+                    // Query
+                    string query = @"CREATE TABLE quandl.""" + datatable.Name + @"""(
+                                        Name                 TEXT    NOT NULL," +
+                                        // Column names [specific data]
+                                        datatable.MakeExtraColumnsWithDataType() + @"
+                                    );";
+
+                    cmd.Connection = conn;
+                    cmd.CommandText = query;
+                    try { cmd.ExecuteNonQuery(); }
+                    catch (PostgresException ex)
+                    {
+                        //Console.WriteLine(ex.Message);
+                        if (ex.SqlState == "42P07")
+                        {
+                            ConsoleInformer.Inform("Table model [" + datatable.Name + "] already exists. Using it");
+                        }
+                        else { conn.Close(); Helpers.ExitWithError(ex.Message); }
+                    }
+
+                    ConsoleInformer.PrintProgress("3D", "[" + datatable.Name + "] Creating table model: ", "100%");
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+        }
     }
 }

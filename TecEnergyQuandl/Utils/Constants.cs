@@ -19,5 +19,16 @@ namespace TecEnergyQuandl.Utils
                                                  "Password=" + PASSWORD + ";";
 
         public static string CONNECTION_STRING = BASE_CONNECTION_STRING + "Database=quandl";
+
+        public static string[] DATATABLES = {
+            "ZACKS/EB",
+            "ZACKS/MT",
+            "ZACKS/FC",
+            "ZACKS/FR",
+            "ZACKS/MKTV",
+            "ZACKS/SHRS",
+            "ZACKS/HDM",
+            "ZACKS/CP"
+        };
     }
 }

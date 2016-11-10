@@ -369,7 +369,7 @@ namespace TecEnergyQuandl.Model.Quandl
             {
                 query += @" WHERE NOT EXISTS (
                             SELECT 1 FROM quandl." + DatabaseCode + @" ds 
-                                WHERE ds.date::date = data.date::date AND
+                                WHERE ds.date = data.date AND
                                       ds.datasetcode = data.datasetcode
                             )";
             }

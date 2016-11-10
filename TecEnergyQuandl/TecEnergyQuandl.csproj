@@ -56,21 +56,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FetchData.cs" />
-    <Compile Include="FetchDatasets.cs" />
+    <Compile Include="Fetchers\FetchData.cs" />
+    <Compile Include="Fetchers\FetchDatasets.cs" />
+    <Compile Include="Fetchers\FetchDatatables.cs" />
+    <Compile Include="Model\Quandl\QuandlColumn.cs" />
     <Compile Include="Model\Quandl\QuandlDataset.cs" />
     <Compile Include="Model\Quandl\QuandlDatasetData.cs" />
     <Compile Include="Model\Quandl\QuandlDatasetGroup.cs" />
+    <Compile Include="Model\Quandl\QuandlDatatable.cs" />
     <Compile Include="Model\ResponseHelpers\DataResponse.cs" />
     <Compile Include="Model\ResponseHelpers\DatasetsResponse.cs" />
+    <Compile Include="Model\ResponseHelpers\DatatableResponse.cs" />
     <Compile Include="PostgresHelpers\QuandlDatabaseActions.cs" />
     <Compile Include="PostgresHelpers\QuandlDatasetActions.cs" />
+    <Compile Include="PostgresHelpers\QuandlDatatableActions.cs" />
     <Compile Include="PostgresHelpers\SchemaActions.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Model\Quandl\QuandlDatabase.cs" />
     <Compile Include="Model\ResponseHelpers\DatabasesResponse.cs" />
     <Compile Include="Model\ResponseHelpers\MetaObject.cs" />
-    <Compile Include="FetchDatabases.cs" />
+    <Compile Include="Fetchers\FetchDatabases.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\ConsoleInformer.cs" />
     <Compile Include="Utils\Constants.cs" />

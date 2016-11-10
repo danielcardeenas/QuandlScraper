@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.Remoting;
 using System.Text;
 using System.Threading.Tasks;
+using TecEnergyQuandl.Fetchers;
 
 namespace TecEnergyQuandl
 {
@@ -29,11 +30,14 @@ namespace TecEnergyQuandl
 
             // 2. Download datasets 
             //  Only the ones selected in quandl.databases (import = true)
-            await BeginDownloadDatasets();
+            //await BeginDownloadDatasets();
 
             // 3. Download datasets data
             //  Only from the datasets selected in quandl.datasets (import = true)
-            await BeginDownloadDatasetsData();
+            //await BeginDownloadDatasetsData();
+
+            // 4. Download datatables
+            BeginDownloadDatatables();
         }
 
         public static async Task BeginDownloadDatabases()
@@ -66,6 +70,29 @@ namespace TecEnergyQuandl
         public static async Task BeginDownloadDatasetsData()
         {
             await FetchData.BeginDownloadData();
+            Console.WriteLine("\n");
+
+            Console.WriteLine("############################################################################");
+            Console.WriteLine("Finished fetching data. \nPress enter to continue downloading datatables...");
+            Console.WriteLine("############################################################################");
+            Console.ReadLine();
+        }
+
+        public static void BeginDownloadDatatables()
+        {
+            // Creates schema for datatables in postgres
+            PostgresHelpers.SchemaActions.CreateQuandlDatatablesTable();
+
+            // Insert known datatables databases
+            PostgresHelpers.QuandlDatatableActions.InsertQuandlDatatables();
+
+            Console.WriteLine("\n");
+            Console.WriteLine("############################################################################");
+            Console.WriteLine("Program is paused, now you should select the Quandl Datatables in Postgress. \nPress enter to continue...");
+            Console.WriteLine("############################################################################");
+            Console.ReadLine();
+
+            FetchDatatables.BeginDownloadData();
             Console.WriteLine("\n");
 
             Console.WriteLine("############################################################################");
