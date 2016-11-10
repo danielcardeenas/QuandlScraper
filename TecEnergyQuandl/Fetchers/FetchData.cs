@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TecEnergyQuandl.Model.Quandl;
 using TecEnergyQuandl.Model.ResponseHelpers;
@@ -18,6 +19,7 @@ namespace TecEnergyQuandl
         private static List<Tuple<string, string>> errors = new List<Tuple<string, string>>();
 
         private static int datasetsFetched = 0;
+        private static bool blocked = false;
         public static async Task BeginDownloadData()
         {
             // Download first page and check meta
@@ -62,15 +64,6 @@ namespace TecEnergyQuandl
             if (errors.Count > 0)
             {
                 Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
-
-                foreach (var error in errors)
-                {
-                    // Write
-                    using (StreamWriter sw = File.AppendText("log.txt"))
-                    {
-                        Utils.Helpers.Log(error.Item1, error.Item2, sw);
-                    }
-                }
             }
 
             // Make datasets model tables
@@ -102,14 +95,45 @@ namespace TecEnergyQuandl
                     datasetData.SetBaseDataset(dataset);
 
                     datasetsFetched++;
-                    Utils.ConsoleInformer.PrintProgress("1C", "Fetching dataset [" + dataset.DatasetCode + "]: ", Utils.Helpers.GetPercent(datasetsFetched, to).ToString() + "%");
+                    using (var mutex = new Mutex(false, "SHARED_FETCH_DATA"))
+                    {
+                        mutex.WaitOne();
+                        // Start process
+                        // ===============================================
+                        Utils.ConsoleInformer.PrintProgress("1C", "Fetching dataset [" + dataset.DatasetCode + "]: ", Utils.Helpers.GetPercent(datasetsFetched, to).ToString() + "%");
+
+                        // End process
+                        // ===============================================
+                        mutex.ReleaseMutex();
+                    }
 
                     // Replace old uncomplete dataset with new one
                     ReplaceCompleteDataset(datasetData);
                 }
                 catch (Exception e)
                 {
-                    // Add error to inform and log later
+                    if (e.Message.Contains("(429)") && !blocked)
+                    {
+                        Utils.ConsoleInformer.Inform("Looks like quandl just blocked you");
+                        blocked = true;
+                    }
+
+                    // Log
+                    using (var mutex = new Mutex(false, "SHARED_LOG_DATA"))
+                    {
+                        mutex.WaitOne();
+                        // Start process
+                        // ===============================================
+                        using (StreamWriter sw = File.AppendText("log.txt"))
+                        {
+                            Utils.Helpers.Log("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message, sw);
+                        }
+
+                        // End process
+                        // ===============================================
+                        mutex.ReleaseMutex();
+                    }
+
                     errors.Add(new Tuple<string, string>("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message));
                 }
             }

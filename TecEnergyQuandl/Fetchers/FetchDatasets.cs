@@ -20,6 +20,7 @@ namespace TecEnergyQuandl
         private static List<Tuple<string, string>> errors = new List<Tuple<string, string>>();
 
         private static int pagesSum;
+        private static bool blocked = false;
         public static async Task BeginDownloadDatasets()
         {
             // Download first page and check meta
@@ -61,15 +62,6 @@ namespace TecEnergyQuandl
             if (errors.Count > 0)
             {
                 Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
-
-                foreach(var error in errors)
-                {
-                    // Write
-                    using (StreamWriter sw = File.AppendText("log.txt"))
-                    {
-                        Utils.Helpers.Log(error.Item1, error.Item2, sw);
-                    }
-                }
             }
 
             // Manipulate data into database
@@ -110,6 +102,18 @@ namespace TecEnergyQuandl
                 }
                 catch (Exception e)
                 {
+                    if (e.Message.Contains("(429)") && !blocked)
+                    {
+                        Utils.ConsoleInformer.Inform("Looks like quandl just blocked you");
+                        blocked = true;
+                    }
+
+                    // Log
+                    using (StreamWriter sw = File.AppendText("log.txt"))
+                    {
+                        Utils.Helpers.Log("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message, sw);
+                    }
+
                     // Add error to inform and log later
                     errors.Add(new Tuple<string, string> ("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message));
                     return new DatasetsResponse();
@@ -134,7 +138,7 @@ namespace TecEnergyQuandl
                         JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
                     pagesSum++;
-                    using (var mutex = new Mutex(false, "SHARED_FETCH_DATASETS"))
+                    using (var mutex = new Mutex(false, "SHARED_LOG_DATASETS"))
                     {
                         mutex.WaitOne();
                         // Start process
@@ -151,6 +155,19 @@ namespace TecEnergyQuandl
                 }
                 catch (Exception e)
                 {
+                    // Blocked?
+                    if (e.Message.Contains("(429)") && !blocked)
+                    {
+                        Utils.ConsoleInformer.Inform("Looks like quandl just blocked you");
+                        blocked = true;
+                    }
+
+                    // Log
+                    using (StreamWriter sw = File.AppendText("log.txt"))
+                    {
+                        Utils.Helpers.Log("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message, sw);
+                    }
+
                     // Add error to inform and log later
                     errors.Add(new Tuple<string, string>("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message));
                 }
