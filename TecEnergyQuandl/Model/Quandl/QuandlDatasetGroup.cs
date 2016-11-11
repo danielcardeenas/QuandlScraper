@@ -427,22 +427,25 @@ namespace TecEnergyQuandl.Model.Quandl
         {
             string extraColumns = "";
 
-            foreach(string column in ColumnNames())
+            for (int i = 0; i < ColumnNames().Count; i++)
             {
-                extraColumns += ", " + PrepareExtraColumnFormated(column, fromNumber);
+                string column = ColumnNames().ElementAt(i);
+                dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
+
+                extraColumns += ", " + PrepareExtraColumnFormated(data, column, fromNumber);
                 fromNumber++;
             }
 
             return extraColumns;
         }
 
-        private string PrepareExtraColumnFormated(string column, int number)
+        private string PrepareExtraColumnFormated(dynamic data, string column, int number)
         {
-            if (GetPostgresColumnType(column).ToLower() == "text")
+            if (GetPostgresColumnType(data, column).ToLower() == "text")
                 return "'{" + number + "}'";
-            else if (GetPostgresColumnType(column).ToLower() == "timestamp")
+            else if (GetPostgresColumnType(data, column).ToLower() == "timestamp")
                 return "to_timestamp('{" + number + "}', 'YYYY-MM-DD hh24:mi:ss')";
-            else if (GetPostgresColumnType(column).ToLower() == "date")
+            else if (GetPostgresColumnType(data, column).ToLower() == "date")
                 return "to_date('{" + number + "}', 'YYYY-MM-DD')";
             else
                 return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
@@ -476,44 +479,46 @@ namespace TecEnergyQuandl.Model.Quandl
         public string MakeDatasetsExtraColumnsWithDataType()
         {
             string columns = "";
-            foreach (string column in ColumnNames())
+            for (int i = 0; i < ColumnNames().Count; i++)
             {
-                columns += "\n" + column + "\t\t" + GetPostgresColumnType(column) + ",";
+                string column = ColumnNames().ElementAt(i);
+                dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
+                columns += "\n" + column + "\t\t" + GetPostgresColumnType(data, column) + ",";
             }
 
             // Return without the last comma ","
             return columns.Remove(columns.Length - 1);
         }
 
-        private string GetPostgresColumnType(string column)
-        {
-            if (column.ToLower() == "date")
-                return "TIMESTAMP";
-            if (column.ToLower() == "value")
-                return "NUMERIC";
-            if (column.ToLower() == "open" ||
-                column.ToLower() == "high" ||
-                column.ToLower() == "low" ||
-                column.ToLower() == "close" ||
-                column.ToLower() == "volume" ||
-                column.ToLower() == "exdividend" ||
-                column.ToLower() == "splitratio" ||
-                column.ToLower() == "adjopen" ||
-                column.ToLower() == "adjhigh" ||
-                column.ToLower() == "adjlow" ||
-                column.ToLower() == "adjclose" ||
-                column.ToLower() == "adjustedclose" ||
-                column.ToLower() == "adjvolume" ||
-                column.ToLower() == "last" ||
-                column.ToLower() == "settle" ||
-                column.ToLower() == "prevdayopeninterest"
-                )
-                return "NUMERIC";
+        //private string GetPostgresColumnType(string column)
+        //{
+        //    if (column.ToLower() == "date")
+        //        return "TIMESTAMP";
+        //    if (column.ToLower() == "value")
+        //        return "NUMERIC";
+        //    if (column.ToLower() == "open" ||
+        //        column.ToLower() == "high" ||
+        //        column.ToLower() == "low" ||
+        //        column.ToLower() == "close" ||
+        //        column.ToLower() == "volume" ||
+        //        column.ToLower() == "exdividend" ||
+        //        column.ToLower() == "splitratio" ||
+        //        column.ToLower() == "adjopen" ||
+        //        column.ToLower() == "adjhigh" ||
+        //        column.ToLower() == "adjlow" ||
+        //        column.ToLower() == "adjclose" ||
+        //        column.ToLower() == "adjustedclose" ||
+        //        column.ToLower() == "adjvolume" ||
+        //        column.ToLower() == "last" ||
+        //        column.ToLower() == "settle" ||
+        //        column.ToLower() == "prevdayopeninterest"
+        //        )
+        //        return "NUMERIC";
 
-            return "TEXT";
-        }
+        //    return "TEXT";
+        //}
 
-        private static string GetPostgresColumnType(dynamic data, string column)
+        private static string GetPostgresColumnType(object data, string column)
         {
             Type type = data?.GetType() == null ? null : data?.GetType();
 
@@ -521,12 +526,15 @@ namespace TecEnergyQuandl.Model.Quandl
                 return "TEXT";
             if (IsNumericType(type))
                 return "NUMERIC";
-            if (Type.GetTypeCode(type.GetType()) == TypeCode.Boolean)
+            if (Type.GetTypeCode(type) == TypeCode.Boolean)
                 return "BOOL";
-            if (Type.GetTypeCode(type.GetType()) == TypeCode.String
+            if (Type.GetTypeCode(type) == TypeCode.String
                 && column.ToLower() == "date")
                 return "DATE";
-            if (Type.GetTypeCode(type.GetType()) == TypeCode.String
+            if (Type.GetTypeCode(type) == TypeCode.String
+                && column.ToLower() == "timestamp")
+                return "TIMESTAMP";
+            if (Type.GetTypeCode(type) == TypeCode.String
                 && column.ToLower() != "date")
                 return "TEXT";
 
@@ -536,7 +544,7 @@ namespace TecEnergyQuandl.Model.Quandl
 
         public static bool IsNumericType(Type o)
         {
-            switch (Type.GetTypeCode(o.GetType()))
+            switch (Type.GetTypeCode(o))
             {
                 case TypeCode.Byte:
                 case TypeCode.SByte:
