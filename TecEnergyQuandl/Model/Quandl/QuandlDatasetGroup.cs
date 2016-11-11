@@ -430,6 +430,11 @@ namespace TecEnergyQuandl.Model.Quandl
             for (int i = 0; i < ColumnNames().Count; i++)
             {
                 string column = ColumnNames().ElementAt(i);
+
+                // Here maybe should check if the value is null
+                // If its null then keep checking to the next data[] element
+                // F. ex: ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(1...inf).ElementAt(i)
+                // Until it get a non null value
                 dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
 
                 extraColumns += ", " + PrepareExtraColumnFormated(data, column, fromNumber);
@@ -482,6 +487,11 @@ namespace TecEnergyQuandl.Model.Quandl
             for (int i = 0; i < ColumnNames().Count; i++)
             {
                 string column = ColumnNames().ElementAt(i);
+
+                // Here maybe should check if the value is null
+                // If its null then keep checking to the next data[] element
+                // F. ex: ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(1...inf).ElementAt(i)
+                // Until it get a non null value
                 dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
                 columns += "\n" + column + "\t\t" + GetPostgresColumnType(data, column) + ",";
             }
