@@ -37,7 +37,7 @@ namespace TecEnergyQuandl
             await BeginDownloadDatasetsData();
 
             // 4. Download datatables
-            BeginDownloadDatatables();
+            //BeginDownloadDatatables();
         }
 
         public static async Task BeginDownloadDatabases()

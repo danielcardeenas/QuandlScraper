@@ -15,6 +15,7 @@ namespace TecEnergyQuandl.Model.Quandl
     {
         public string DatabaseCode { get; set; }
         public List<QuandlDataset> Datasets { get; set; }
+
         //private List<string> queries;
         private string queryFilePath;
 
@@ -25,7 +26,12 @@ namespace TecEnergyQuandl.Model.Quandl
         // Each Database has its own extra columns
         public List<string> ColumnNames()
         {
-            return Datasets.ElementAt(0).ColumnNames;
+            List<string> columns = new List<string>();
+            foreach(var dataset in Datasets)
+                columns.AddRange(dataset.ColumnNames.Except(columns));
+
+            return columns;
+            //return Datasets.ElementAt(0).ColumnNames;
         }
 
         // Detects primary keys
@@ -333,7 +339,7 @@ namespace TecEnergyQuandl.Model.Quandl
 
         private void CreatePartialDataQuery(QuandlDatasetData dataset, int from, int to)
         {
-            string query = @"WITH data(" + GetColumnsForInsertDataQuery() + @") as ( values";
+            string query = @"WITH data(" + dataset.GetColumnsForInsertDataQuery() + @") as ( values";
 
             if (to > dataset.Data.Count)
                 to = dataset.Data.Count;
@@ -353,7 +359,8 @@ namespace TecEnergyQuandl.Model.Quandl
                 MakeDateTimeStamp(ref data);
 
                 // Extra columns
-                query += String.Format(FormatExtraColumns(0) + " ),",
+                string format = FormatExtraColumns(0, dataset);
+                query += String.Format(FormatExtraColumns(0, dataset) + " ),",
                                 data);
             }
 
@@ -361,8 +368,8 @@ namespace TecEnergyQuandl.Model.Quandl
             query = query.Remove(query.Length - 1);
 
             query += ")"; // Close (values ... ) 
-            query += "\nINSERT INTO quandl." + DatabaseCode + "(" + GetColumnsForInsertDataQuery() + ")" +
-                     " SELECT " + GetColumnsForInsertDataQuery() +
+            query += "\nINSERT INTO quandl." + DatabaseCode + "(" + dataset.GetColumnsForInsertDataQuery() + ")" +
+                     " SELECT " + dataset.GetColumnsForInsertDataQuery() +
                      " FROM data";
 
             if (HasColumnDate())
@@ -423,19 +430,22 @@ namespace TecEnergyQuandl.Model.Quandl
             data[dateIndex] = myDate.ToString("yyyy-MM-dd HH:mm:ss");
         }
 
-        private string FormatExtraColumns(int fromNumber)
+        private string FormatExtraColumns(int fromNumber, QuandlDatasetData dataset)
         {
             string extraColumns = "";
 
-            for (int i = 0; i < ColumnNames().Count; i++)
+            for (int i = 0; i < dataset.ColumnNames.Count; i++)
             {
-                string column = ColumnNames().ElementAt(i);
+                string column = dataset.ColumnNames.ElementAt(i);
 
                 // Here maybe should check if the value is null
                 // If its null then keep checking to the next data[] element
                 // F. ex: ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(1...inf).ElementAt(i)
                 // Until it get a non null value
-                dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
+                //dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
+
+                // Already done what above comment says
+                dynamic data = GetSampleDataOnColumn(column);
 
                 extraColumns += ", " + PrepareExtraColumnFormated(data, column, fromNumber);
                 fromNumber++;
@@ -456,6 +466,7 @@ namespace TecEnergyQuandl.Model.Quandl
                 return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
         }
 
+        [Obsolete("Use the QuandlDatasetData method instead")]
         private string GetColumnsForInsertDataQuery()
         {
             string columns = @" DatasetCode,
@@ -469,6 +480,7 @@ namespace TecEnergyQuandl.Model.Quandl
             return columns;
         }
 
+        [Obsolete("Use the QuandlDatasetData method instead")]
         public string MakeDatasetsExtraColumns()
         {
             string columns = "";
@@ -492,12 +504,82 @@ namespace TecEnergyQuandl.Model.Quandl
                 // If its null then keep checking to the next data[] element
                 // F. ex: ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(1...inf).ElementAt(i)
                 // Until it get a non null value
-                dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
+                //dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
+
+                try
+                { dynamic qwe = GetSampleDataOnColumn(column); }
+                catch (Exception ex)
+                {
+                    try { dynamic aqsd = GetSampleDataOnColumn(column); }
+                    catch (Exception exa) { }
+                }
+
+                dynamic data = GetSampleDataOnColumn(column);
                 columns += "\n" + column + "\t\t" + GetPostgresColumnType(data, column) + ",";
             }
 
             // Return without the last comma ","
             return columns.Remove(columns.Length - 1);
+        }
+
+        // Find a dataset with the same column name and check its data type
+        private object GetSampleDataOnColumn(string column)
+        {
+            //QuandlDatasetData datasetDataSample;
+            foreach (var datasetData in Datasets)
+            {
+                // Every dataset in this group has the same data structure
+                QuandlDatasetData datasetDataSample;
+
+                try { datasetDataSample = (QuandlDatasetData)datasetData; }
+                catch (Exception ex) { continue; }
+
+                // Check if this data is not null and if it has data
+                if (datasetDataSample != null && datasetDataSample.Data.Count > 0)
+                {
+                    // This dataset has the column im looking for?
+                    if (datasetDataSample.ColumnNames.Any(col => col == column))
+                    {
+                        // Get the index of this column in the dataset
+                        var index = datasetDataSample.ColumnNames.FindIndex(c => c == column);
+
+                        foreach (object[] data in datasetDataSample.Data)
+                        {
+                            // Verify if it contains and if the value is not null
+                            if (data.Count() < index || data.ElementAt(index) == null)
+                                continue;
+
+                            return data.ElementAt(index);
+                        }
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            // Return text by default
+            return "";
+        }
+
+        private object GetSampleDataOnIndex(int index, QuandlDatasetData dataset)
+        {
+            // Check if this data is not null and if it has data
+            if (dataset == null || dataset.Data.Count > 0)
+            {
+                foreach (object[] data in dataset.Data)
+                {
+                    // Verify if it contains and if the value is not null
+                    if (data.Count() < index || data.ElementAt(index) == null)
+                        continue;
+
+                    return data.ElementAt(index);
+                }
+            }
+
+            // Return text by default
+            return "";
         }
 
         //private string GetPostgresColumnType(string column)

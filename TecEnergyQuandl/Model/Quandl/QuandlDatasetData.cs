@@ -23,12 +23,42 @@ namespace TecEnergyQuandl.Model.Quandl
             Description = dataset.Description;
             NewestAvailableDate = dataset.NewestAvailableDate;
             OldestAvailableDate = dataset.OldestAvailableDate;
-            ColumnNames = dataset.ColumnNames;
+
+            // Ignore column names from database
+            // Use the ones fetched from quandl instead
+            // Uncomment to use database ones
+            //ColumnNames = dataset.ColumnNames;
+
             Frequency = dataset.Frequency;
             Type = dataset.Type;
             Premium = dataset.Premium;
             DatabaseId = dataset.DatabaseId;
             Import = dataset.Import;
+        }
+
+        public string GetColumnsForInsertDataQuery()
+        {
+            string columns = @" DatasetCode,
+                                DatabaseCode,
+                                Name,
+                                Transform,
+                                DatabaseId," +
+                                // Column names [specific data]
+                                MakeDatasetsExtraColumns();
+
+            return columns;
+        }
+
+        private string MakeDatasetsExtraColumns()
+        {
+            string columns = "";
+            foreach (string column in ColumnNames)
+            {
+                columns += "\n" + column + ",";
+            }
+
+            // Return without the last comma ","
+            return columns.Remove(columns.Length - 1);
         }
     }
 }

@@ -42,10 +42,11 @@ namespace TecEnergyQuandl.Model.Quandl
                 // Remove special characters
                 columnNames = value.Select(c => c
                     .Replace("'", "")
-                    .Replace("-", "")
-                    .Replace(".", "")
-                    .Replace(" ", "")
-                    .Replace("/", "-"))
+                    .Replace("-", "_")
+                    .Replace(".", "_")
+                    .Replace(" ", "_")
+                    .Replace(",", "_")
+                    .Replace("/", "_"))
                     .ToList();
             }
         }
