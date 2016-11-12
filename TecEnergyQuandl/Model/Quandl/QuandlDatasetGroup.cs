@@ -506,14 +506,6 @@ namespace TecEnergyQuandl.Model.Quandl
                 // Until it get a non null value
                 //dynamic data = ((QuandlDatasetData)Datasets.ElementAt(0)).Data.ElementAt(0).ElementAt(i);
 
-                try
-                { dynamic qwe = GetSampleDataOnColumn(column); }
-                catch (Exception ex)
-                {
-                    try { dynamic aqsd = GetSampleDataOnColumn(column); }
-                    catch (Exception exa) { }
-                }
-
                 dynamic data = GetSampleDataOnColumn(column);
                 columns += "\n" + column + "\t\t" + GetPostgresColumnType(data, column) + ",";
             }
