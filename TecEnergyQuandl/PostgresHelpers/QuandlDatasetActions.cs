@@ -233,5 +233,12 @@ namespace TecEnergyQuandl.PostgresHelpers
                 Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
             }
         }
+
+        public static void InsertQuandlDatasetsDataGroup(QuandlDatasetDataGroup datasetGroup)
+        {
+            //Console.WriteLine("\nCreating query for datasets in group: [" + datasetGroup.DatabaseCode + "] (" + count + "/" + datasetsGroups.Count + ")");
+            datasetGroup.MakeInsertDataQuery();
+            Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
+        }
     }
 }

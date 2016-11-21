@@ -243,6 +243,55 @@ namespace TecEnergyQuandl.PostgresHelpers
             }
         }
 
+        // Where all the datasets data will go
+        public static void CreateQuandlDatasetDataTable(QuandlDatasetGroup datasetGroup)
+        {
+            // Do not make data tables without date colum
+            if (!datasetGroup.HasColumnDate())
+                return;
+
+            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand())
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+
+                    // Query
+                    string query = @"CREATE TABLE quandl." + datasetGroup.DatabaseCode + @"(
+                                        DatasetCode          TEXT,
+                                        DatabaseCode         TEXT,
+                                        Name                 TEXT    NOT NULL,
+                                        Transform            TEXT,
+                                        DatabaseId           BIGINT," +
+                                        // Column names [specific data]
+                                        datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
+                                        PRIMARY KEY(" + string.Join(", ", datasetGroup.PrimaryKeys()) + @") 
+                                    );";
+
+                    cmd.Connection = conn;
+                    cmd.CommandText = query;
+                    try { cmd.ExecuteNonQuery(); }
+                    catch (PostgresException ex)
+                    {
+                        //Console.WriteLine(ex.Message);
+                        if (ex.SqlState == "42P07")
+                        {
+                            ConsoleInformer.Inform("Table model [" + datasetGroup.DatabaseCode + "] already exists. Using it");
+                        }
+                        else { conn.Close(); Helpers.ExitWithError(ex.Message); }
+                    }
+
+                    ConsoleInformer.PrintProgress("2C", "[" + datasetGroup.DatabaseCode + "] Creating table model: ", "100%");
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+        }
+
         // Create datatable table
         public static void CreateQuandlDatatablesTable()
         {

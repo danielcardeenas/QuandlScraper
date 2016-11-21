@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TecEnergyQuandl.Model.Quandl;
 using TecEnergyQuandl.Model.ResponseHelpers;
+using TecEnergyQuandl.PostgresHelpers;
 using TecEnergyQuandl.Utils;
 
 namespace TecEnergyQuandl
@@ -57,6 +58,11 @@ namespace TecEnergyQuandl
                 // Identify current group
                 Utils.ConsoleInformer.InformSimple("Group model: [" + datasetGroup.DatabaseCode + "]. Group:" + count + "/" + datasetsGroups.Count);
 
+                // Make datasets model tables
+                Console.WriteLine("Creating unique table model for datasets:");
+                SchemaActions.CreateQuandlDatasetDataTable(datasetGroup);
+                Console.WriteLine();
+
                 // Request all datasets from group
                 await DownloadDatasetsDataAsync(datasetGroup, datasetGroup.Datasets.Count);
             }
@@ -68,7 +74,7 @@ namespace TecEnergyQuandl
             }
 
             // Make datasets model tables
-            PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetsData(datasetsDataGroups);
+            //PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetsData(datasetsDataGroups);
         }
 
         private static async Task DownloadDatasetsDataAsync(QuandlDatasetGroup datasetGroup, int to)
@@ -97,11 +103,6 @@ namespace TecEnergyQuandl
 
                     datasetsFetched++;
 
-                    // Replace old uncomplete dataset with new one
-                    //ReplaceCompleteDataset(datasetData);
-
-                    AddCompleteDataset(datasetData);
-
                     using (var mutex = new Mutex(false, "SHARED_FETCH_DATA"))
                     {
                         mutex.WaitOne();
@@ -113,6 +114,15 @@ namespace TecEnergyQuandl
                         // ===============================================
                         mutex.ReleaseMutex();
                     }
+
+                    // Replace old uncomplete dataset with new one
+                    //ReplaceCompleteDataset(datasetData);
+                    //AddCompleteDataset(datasetData);
+
+                    // Insert
+                    QuandlDatasetDataGroup datasetGroup = new QuandlDatasetDataGroup() { DatabaseCode = datasetData.DatabaseCode, Datasets = new List<QuandlDatasetData>() };
+                    datasetGroup.Datasets.Add(datasetData);
+                    PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetsDataGroup(datasetGroup);
                 }
                 catch (Exception e)
                 {
