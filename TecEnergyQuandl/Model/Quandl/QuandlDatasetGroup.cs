@@ -16,6 +16,9 @@ namespace TecEnergyQuandl.Model.Quandl
         public string DatabaseCode { get; set; }
         public List<QuandlDataset> Datasets { get; set; }
 
+        private List<string> columnNames;
+        private Dictionary<string, object> columnsDict = new Dictionary<string, object>();
+
         //private List<string> queries;
         private string queryFilePath;
 
@@ -26,12 +29,14 @@ namespace TecEnergyQuandl.Model.Quandl
         // Each Database has its own extra columns
         public List<string> ColumnNames()
         {
-            List<string> columns = new List<string>();
-            foreach(var dataset in Datasets)
-                columns.AddRange(dataset.ColumnNames.Except(columns));
+            if (columnNames == null)
+            {
+                columnNames = new List<string>();
+                foreach (var dataset in Datasets)
+                    columnNames.AddRange(dataset.ColumnNames.Except(columnNames));
+            }
 
-            return columns;
-            //return Datasets.ElementAt(0).ColumnNames;
+            return columnNames;
         }
 
         // Detects primary keys

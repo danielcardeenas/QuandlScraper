@@ -338,6 +338,9 @@ namespace TecEnergyQuandl.Model.Quandl
 
         private void CreatePartialDataQuery(QuandlDatasetData dataset, int from, int to)
         {
+            // Verify the columns exists
+            createExtraColumnsIfNeeded(dataset);
+
             string query = @"WITH data(" + dataset.GetColumnsForInsertDataQuery() + @") as ( values";
 
             if (to > dataset.Data.Count)
@@ -418,6 +421,48 @@ namespace TecEnergyQuandl.Model.Quandl
                     // Close connection
                     // ===============================================================
                     conn.Close();
+                }
+            }
+        }
+
+        private void createExtraColumnsIfNeeded(QuandlDatasetData dataset)
+        {
+            string tableName = "quandl." + DatabaseCode;
+            // For each extra column
+            foreach(var column in dataset.ColumnNames)
+            {
+                string query = @"DO $$ 
+                                BEGIN
+                                    BEGIN
+                                        ALTER TABLE " + tableName + " ADD COLUMN " + column + " " + GetPostgresColumnType(GetSampleDataOnColumn(column), column) + @";
+                                    EXCEPTION
+                                        WHEN duplicate_column THEN RAISE NOTICE 'column " + column + " already exists in " + tableName + @".';
+                                    END;
+                                END;
+                            $$";
+
+                //Execute query
+                using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
+                {
+                    using (var cmd = new NpgsqlCommand())
+                    {
+                        // Open connection
+                        // ===============================================================
+                        conn.Open();
+
+                        cmd.Connection = conn;
+                        cmd.CommandText = query;
+                        try { cmd.ExecuteNonQuery(); }
+                        catch (PostgresException ex)
+                        {
+                            conn.Close();
+                            Helpers.ExitWithError(ex.Message);
+                        }
+
+                        // Close connection
+                        // ===============================================================
+                        conn.Close();
+                    }
                 }
             }
         }
@@ -517,14 +562,8 @@ namespace TecEnergyQuandl.Model.Quandl
         private object GetSampleDataOnColumn(string column)
         {
             //QuandlDatasetData datasetDataSample;
-            foreach (var datasetData in Datasets)
+            foreach (var datasetDataSample in Datasets)
             {
-                // Every dataset in this group has the same data structure
-                QuandlDatasetData datasetDataSample;
-
-                try { datasetDataSample = (QuandlDatasetData)datasetData; }
-                catch (Exception ex) { continue; }
-
                 // Check if this data is not null and if it has data
                 if (datasetDataSample != null && datasetDataSample.Data.Count > 0)
                 {
