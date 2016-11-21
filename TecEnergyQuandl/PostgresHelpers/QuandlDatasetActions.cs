@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TecEnergyQuandl.Model.Quandl;
 using TecEnergyQuandl.Utils;
@@ -49,7 +50,17 @@ namespace TecEnergyQuandl.PostgresHelpers
             try
             {
                 datasetGroup.MakeInsertQuery();
-                ConsoleInformer.PrintProgress("3B", "Inserting datasets for [" + datasetGroup.DatabaseCode + "]");
+                using (var mutex = new Mutex(false, "SHARED_LOG_DATASETS"))
+                {
+                    mutex.WaitOne();
+                    // Start process
+                    // ===============================================
+                    ConsoleInformer.PrintProgress("3B", "Inserting datasets for [" + datasetGroup.DatabaseCode + "]");
+
+                    // End process
+                    // ===============================================
+                    mutex.ReleaseMutex();
+                }
             }
             catch (Exception ex)
             {
@@ -238,7 +249,17 @@ namespace TecEnergyQuandl.PostgresHelpers
         {
             //Console.WriteLine("\nCreating query for datasets in group: [" + datasetGroup.DatabaseCode + "] (" + count + "/" + datasetsGroups.Count + ")");
             datasetGroup.MakeInsertDataQuery();
-            Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
+            using (var mutex = new Mutex(false, "SHARED_FETCH_DATA"))
+            {
+                mutex.WaitOne();
+                // Start process
+                // ===============================================
+                Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
+
+                // End process
+                // ===============================================
+                mutex.ReleaseMutex();
+            }
         }
     }
 }
