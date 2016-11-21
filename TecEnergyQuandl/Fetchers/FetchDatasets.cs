@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TecEnergyQuandl.Model.Quandl;
 using TecEnergyQuandl.Model.ResponseHelpers;
+using TecEnergyQuandl.PostgresHelpers;
 using TecEnergyQuandl.Utils;
 
 namespace TecEnergyQuandl
@@ -31,6 +33,11 @@ namespace TecEnergyQuandl
             databases.ForEach(db =>
                 Console.WriteLine(" -[DB] " + db.Name + " - " + db.DatabaseCode)
             );
+            Console.WriteLine();
+
+            // Prepare schema:
+            // Make datasets model tables
+            SchemaActions.CreateQuandlDatasetTable();
             Console.WriteLine();
 
             int count = 0;
@@ -68,7 +75,7 @@ namespace TecEnergyQuandl
             Console.WriteLine("\nInserting data into database\n---------------------------------------");
 
             // Make datasets list
-            PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasets(datasetsGroups);
+           //PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasets(datasetsGroups);
         }
 
         private static DatasetsResponse DownloadDataset(int page, QuandlDatabase database)
@@ -96,6 +103,10 @@ namespace TecEnergyQuandl
 
                     // Add it to its own group
                     datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
+
+                    // Insert datasets page directly
+                    QuandlDatasetGroup datasetGroup = new QuandlDatasetGroup() { DatabaseCode = database.DatabaseCode, Datasets = response.Datasets};
+                    PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetGroup(datasetGroup);
 
                     return response;
 
@@ -151,7 +162,11 @@ namespace TecEnergyQuandl
                     }
 
                     // Add it to its own group
-                    datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
+                    //datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
+
+                    // Insert datasets page directly
+                    QuandlDatasetGroup datasetGroup = new QuandlDatasetGroup() { DatabaseCode = database.DatabaseCode, Datasets = response.Datasets };
+                    PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetGroup(datasetGroup);
                 }
                 catch (Exception e)
                 {

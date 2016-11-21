@@ -20,6 +20,17 @@ namespace TecEnergyQuandl.Utils
             Console.ResetColor();
         }
 
+        public static void PrintProgress(string taskId, string title)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+            Console.Write("{" + taskId + "} ");
+            Console.ResetColor();
+            Console.Write(title);
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine();
+            Console.ResetColor();
+        }
+
         public static void Inform(string definition)
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;

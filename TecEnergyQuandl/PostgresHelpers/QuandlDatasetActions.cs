@@ -44,6 +44,26 @@ namespace TecEnergyQuandl.PostgresHelpers
             }
         }
 
+        public static void InsertQuandlDatasetGroup(QuandlDatasetGroup datasetGroup)
+        {
+            try
+            {
+                datasetGroup.MakeInsertQuery();
+                ConsoleInformer.PrintProgress("3B", "Inserting datasets for [" + datasetGroup.DatabaseCode + "]");
+            }
+            catch (Exception ex)
+            {
+                // Write
+                Utils.ConsoleInformer.Inform("Some unexpected stuff happened when inserting [" + datasetGroup.DatabaseCode + "]. See the log for more info");
+
+                using (StreamWriter sw = File.AppendText("log.txt"))
+                {
+                    Utils.Helpers.Log("Something worng happened when trying to insert [" + datasetGroup.DatabaseCode + "] datasets. Check log",
+                                    ex.Message, sw);
+                }
+            }
+        }
+
         [Obsolete("Use MakeInsertQuery() instead")]
         public static void InsertQuandlDatasets(QuandlDatasetGroup datasetGroup)
         {
