@@ -16,6 +16,7 @@ namespace TecEnergyQuandl
     public static class FetchData
     {
         private static List<QuandlDatasetGroup> datasetsGroups;
+        private static List<QuandlDatasetDataGroup> datasetsDataGroups = new List<QuandlDatasetDataGroup>();
         private static List<Tuple<string, string>> errors = new List<Tuple<string, string>>();
 
         private static int datasetsFetched = 0;
@@ -67,7 +68,7 @@ namespace TecEnergyQuandl
             }
 
             // Make datasets model tables
-            PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetsData(datasetsGroups);
+            PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasetsData(datasetsDataGroups);
         }
 
         private static async Task DownloadDatasetsDataAsync(QuandlDatasetGroup datasetGroup, int to)
@@ -95,6 +96,12 @@ namespace TecEnergyQuandl
                     datasetData.SetBaseDataset(dataset);
 
                     datasetsFetched++;
+
+                    // Replace old uncomplete dataset with new one
+                    //ReplaceCompleteDataset(datasetData);
+
+                    AddCompleteDataset(datasetData);
+
                     using (var mutex = new Mutex(false, "SHARED_FETCH_DATA"))
                     {
                         mutex.WaitOne();
@@ -106,9 +113,6 @@ namespace TecEnergyQuandl
                         // ===============================================
                         mutex.ReleaseMutex();
                     }
-
-                    // Replace old uncomplete dataset with new one
-                    ReplaceCompleteDataset(datasetData);
                 }
                 catch (Exception e)
                 {
@@ -139,6 +143,20 @@ namespace TecEnergyQuandl
             }
         }
 
+        private static void AddCompleteDataset(QuandlDatasetData datasetData)
+        {
+            // If group doesnt exists, create it
+            if (!datasetsDataGroups.Exists(d => d.DatabaseCode == datasetData.DatabaseCode))
+                datasetsDataGroups.Add(new QuandlDatasetDataGroup() { DatabaseCode = datasetData.DatabaseCode, Datasets = new List<QuandlDatasetData>() });
+
+            // Add it
+            datasetsDataGroups.Find(d => d.DatabaseCode == datasetData.DatabaseCode).Datasets.Add(datasetData);
+        }
+
+        /**
+         * Not used anymore
+         */
+         [Obsolete("Use AddCompleteDataset instead")]
         private static void ReplaceCompleteDataset(QuandlDatasetData datasetData)
         {
             // Reference current groups list

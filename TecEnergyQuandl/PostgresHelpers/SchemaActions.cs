@@ -195,7 +195,7 @@ namespace TecEnergyQuandl.PostgresHelpers
         }
 
         // Where all the datasets data will go
-        public static void CreateQuandlDatasetDataTable(QuandlDatasetGroup datasetGroup)
+        public static void CreateQuandlDatasetDataTable(QuandlDatasetDataGroup datasetGroup)
         {
             // Do not make data tables without date colum
             if (!datasetGroup.HasColumnDate())

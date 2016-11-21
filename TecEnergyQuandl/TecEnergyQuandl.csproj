@@ -63,6 +63,7 @@
     <Compile Include="Model\Quandl\QuandlDataset.cs" />
     <Compile Include="Model\Quandl\QuandlDatasetData.cs" />
     <Compile Include="Model\Quandl\QuandlDatasetGroup.cs" />
+    <Compile Include="Model\Quandl\QuandlDatasetDataGroup.cs" />
     <Compile Include="Model\Quandl\QuandlDatatable.cs" />
     <Compile Include="Model\ResponseHelpers\DataResponse.cs" />
     <Compile Include="Model\ResponseHelpers\DatasetsResponse.cs" />

@@ -196,51 +196,21 @@ namespace TecEnergyQuandl.PostgresHelpers
             return datasetNewestDateList;
         }
 
-        public static void InsertQuandlDatasetsData(List<QuandlDatasetGroup> datasetsGroups)
+        public static void InsertQuandlDatasetsData(List<QuandlDatasetDataGroup> datasetsGroups)
         {
             // Make datasets model tables
             Console.WriteLine("Creating unique table model for datasets:");
-            foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
+            foreach (QuandlDatasetDataGroup datasetGroup in datasetsGroups)
                 SchemaActions.CreateQuandlDatasetDataTable(datasetGroup);
 
             // Insert data
             int count = 0;
-            foreach (QuandlDatasetGroup datasetGroup in datasetsGroups)
+            foreach (QuandlDatasetDataGroup datasetGroup in datasetsGroups)
             {
                 count++;
                 Console.WriteLine("\nCreating query for datasets in group: [" + datasetGroup.DatabaseCode + "] (" + count + "/" + datasetsGroups.Count + ")");
                 datasetGroup.MakeInsertDataQuery();
                 Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
-            }
-        }
-
-        private static void InsertQuandlDatasetData(QuandlDatasetGroup datasetGroup)
-        {
-            string query = "";
-            using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
-            {
-                using (var cmd = new NpgsqlCommand())
-                {
-                    // Open connection
-                    // ===============================================================
-                    conn.Open();
-
-                    // Query
-                    datasetGroup.MakeInsertDataQuery();
-
-                    cmd.Connection = conn;
-                    cmd.CommandText = query;
-                    try { cmd.ExecuteNonQuery(); }
-                    catch (PostgresException ex)
-                    {
-                        conn.Close();
-                        Helpers.ExitWithError(ex.Message);
-                    }
-
-                    // Close connection
-                    // ===============================================================
-                    conn.Close();
-                }
             }
         }
     }
