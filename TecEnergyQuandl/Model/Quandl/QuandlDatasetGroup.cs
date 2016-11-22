@@ -52,6 +52,14 @@ namespace TecEnergyQuandl.Model.Quandl
             return primaryKeys.ToArray();
         }
 
+        public string MakePrimaryKeysForCreate()
+        {
+            string query = "\ndate\t\tdate,";
+
+            // Return without the last comma ","
+            return query.Remove(query.Length - 1);
+        }
+
         // Creates query to insert dataset
         public string MakeInsertQueryFile()
         {

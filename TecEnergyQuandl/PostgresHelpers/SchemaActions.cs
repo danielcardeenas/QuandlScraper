@@ -217,8 +217,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                                         Transform            TEXT,
                                         DatabaseId           BIGINT," +
                                         // Column names [specific data]
-                                        datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
-                                        PRIMARY KEY(" + string.Join(", ", datasetGroup.PrimaryKeys()) + @") 
+                                        //datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
+                                        "PRIMARY KEY(" + string.Join(", ", datasetGroup.PrimaryKeys()) + @") 
                                     );";
 
                     cmd.Connection = conn;
@@ -266,7 +266,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                                         Transform            TEXT,
                                         DatabaseId           BIGINT," +
                                         // Column names [specific data]
-                                        datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
+                                        //datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
+                                        datasetGroup.MakePrimaryKeysForCreate() + @",
                                         PRIMARY KEY(" + string.Join(", ", datasetGroup.PrimaryKeys()) + @") 
                                     );";
 

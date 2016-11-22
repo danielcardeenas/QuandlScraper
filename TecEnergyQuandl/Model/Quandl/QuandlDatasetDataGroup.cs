@@ -431,12 +431,28 @@ namespace TecEnergyQuandl.Model.Quandl
             // For each extra column
             foreach(var column in dataset.ColumnNames)
             {
+                string columnType = GetPostgresColumnType(GetSampleDataOnColumn(column), column).ToLower();
+                var _column = column.ToLower();
                 string query = @"DO $$ 
                                 BEGIN
                                     BEGIN
-                                        ALTER TABLE " + tableName + " ADD COLUMN " + column + " " + GetPostgresColumnType(GetSampleDataOnColumn(column), column) + @";
-                                    EXCEPTION
-                                        WHEN duplicate_column THEN RAISE NOTICE 'column " + column + " already exists in " + tableName + @".';
+                                        ALTER TABLE " + tableName + " ADD COLUMN " + _column + " " + columnType + @";
+                                    EXCEPTION 
+                                        WHEN duplicate_column THEN 
+                                            IF (SELECT format_type(atttypid, atttypmod) AS type
+                                                FROM   pg_attribute
+                                                WHERE  attrelid = '" + tableName + "'::regclass and attname = '" + _column + @"'
+                                                AND    attnum > 0
+                                                AND    NOT attisdropped) = '" + columnType + @"' THEN
+    	                                        RAISE NOTICE 'Has needed type.';
+                                            ELSE
+                                                IF '" + columnType + @"' = 'text' THEN
+                                                        RAISE NOTICE 'New type is text, comes from a null most likely so ignoring';
+                                                ELSE
+                                                    RAISE NOTICE 'Should alter.';
+                                                    " + CreateCastQuery(tableName, column, columnType) + @" 
+                                                END IF;
+                                            END IF;
                                     END;
                                 END;
                             $$";
@@ -465,6 +481,14 @@ namespace TecEnergyQuandl.Model.Quandl
                     }
                 }
             }
+        }
+
+        private string CreateCastQuery(string tableName, string column, string columnType)
+        {
+            // Clean
+            //string clean = String.Format("ALTER TABLE {0} ALTER COLUMN {1} TYPE text USING {1}::{2}; update {0} set {1} = ''; ", tableName, column, "text");
+            string cast = String.Format("ALTER TABLE {0} ALTER COLUMN {1} TYPE {2} USING cast(coalesce(nullif({1},''),null) as {2});", tableName, column, columnType);
+            return cast;
         }
 
         private void MakeDateTimeStamp(ref object[] data)
