@@ -35,12 +35,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                 {
                     // Write
                     Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
-
-                    using (StreamWriter sw = File.AppendText("log.txt"))
-                    {
-                        Utils.Helpers.Log("Something worng happened when trying to insert [" + datasetGroup.DatabaseCode + "] datasets. Check log", 
-                                        ex.Message, sw);
-                    }
+                    Utils.Helpers.Log("Something worng happened when trying to insert [" + datasetGroup.DatabaseCode + "] datasets. Check log", ex.Message);
                 }
             }
         }
@@ -50,28 +45,13 @@ namespace TecEnergyQuandl.PostgresHelpers
             try
             {
                 datasetGroup.MakeInsertQuery();
-                using (var mutex = new Mutex(false, "SHARED_LOG_DATASETS"))
-                {
-                    mutex.WaitOne();
-                    // Start process
-                    // ===============================================
-                    ConsoleInformer.PrintProgress("3B", "Inserting datasets for [" + datasetGroup.DatabaseCode + "]");
-
-                    // End process
-                    // ===============================================
-                    mutex.ReleaseMutex();
-                }
+                ConsoleInformer.PrintProgress("3B", "Inserting datasets for [" + datasetGroup.DatabaseCode + "]");
             }
             catch (Exception ex)
             {
                 // Write
                 Utils.ConsoleInformer.Inform("Some unexpected stuff happened when inserting [" + datasetGroup.DatabaseCode + "]. See the log for more info");
-
-                using (StreamWriter sw = File.AppendText("log.txt"))
-                {
-                    Utils.Helpers.Log("Something worng happened when trying to insert [" + datasetGroup.DatabaseCode + "] datasets. Check log",
-                                    ex.Message, sw);
-                }
+                Utils.Helpers.Log("Something worng happened when trying to insert [" + datasetGroup.DatabaseCode + "] datasets. Check log", ex.Message);
             }
         }
 
@@ -249,17 +229,7 @@ namespace TecEnergyQuandl.PostgresHelpers
         {
             //Console.WriteLine("\nCreating query for datasets in group: [" + datasetGroup.DatabaseCode + "] (" + count + "/" + datasetsGroups.Count + ")");
             datasetGroup.MakeInsertDataQuery();
-            using (var mutex = new Mutex(false, "SHARED_FETCH_DATA"))
-            {
-                mutex.WaitOne();
-                // Start process
-                // ===============================================
-                Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
-
-                // End process
-                // ===============================================
-                mutex.ReleaseMutex();
-            }
+            Utils.ConsoleInformer.PrintProgress("3C", "Inserting data for group[" + datasetGroup.DatabaseCode + "]: ", "100%");
         }
     }
 }

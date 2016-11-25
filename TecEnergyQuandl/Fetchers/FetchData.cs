@@ -103,17 +103,7 @@ namespace TecEnergyQuandl
 
                     datasetsFetched++;
 
-                    using (var mutex = new Mutex(false, "SHARED_FETCH_DATA"))
-                    {
-                        mutex.WaitOne();
-                        // Start process
-                        // ===============================================
-                        Utils.ConsoleInformer.PrintProgress("1C", "Fetching dataset [" + dataset.DatasetCode + "]: ", Utils.Helpers.GetPercent(datasetsFetched, to).ToString() + "%");
-
-                        // End process
-                        // ===============================================
-                        mutex.ReleaseMutex();
-                    }
+                    Utils.ConsoleInformer.PrintProgress("1C", "Fetching dataset [" + dataset.DatasetCode + "]: ", Utils.Helpers.GetPercent(datasetsFetched, to).ToString() + "%");
 
                     // Replace old uncomplete dataset with new one
                     //ReplaceCompleteDataset(datasetData);
@@ -133,20 +123,7 @@ namespace TecEnergyQuandl
                     }
 
                     // Log
-                    using (var mutex = new Mutex(false, "SHARED_LOG_DATA"))
-                    {
-                        mutex.WaitOne();
-                        // Start process
-                        // ===============================================
-                        using (StreamWriter sw = File.AppendText("log.txt"))
-                        {
-                            Utils.Helpers.Log("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message, sw);
-                        }
-
-                        // End process
-                        // ===============================================
-                        mutex.ReleaseMutex();
-                    }
+                    Utils.Helpers.Log("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message);
 
                     errors.Add(new Tuple<string, string>("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message));
                 }

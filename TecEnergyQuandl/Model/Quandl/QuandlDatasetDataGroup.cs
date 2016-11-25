@@ -361,9 +361,8 @@ namespace TecEnergyQuandl.Model.Quandl
                 MakeDateTimeStamp(ref data);
 
                 // Extra columns
-                string format = FormatExtraColumns(0, dataset);
-                query += String.Format(FormatExtraColumns(0, dataset) + " ),",
-                                data);
+                string format = FormatExtraGeneratedColumns(0, dataset);
+                query += String.Format(format + " ),", data);
             }
 
             // Remove last comma ","
@@ -397,25 +396,12 @@ namespace TecEnergyQuandl.Model.Quandl
                     try { cmd.ExecuteNonQuery(); }
                     catch (PostgresException ex)
                     {
+                        // Data type mismatch
+                        //if (ex.SqlState == "42804")
+
                         conn.Close();
-                        using (var mutex = new Mutex(false, "SHARED_INSERT_DATASETS"))
-                        {
-                            mutex.WaitOne();
-                            // Write
-                            // ===============================================
-                            using (StreamWriter sw = File.AppendText("log.txt"))
-                            {
-                                Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
-                                Utils.Helpers.Log("Failed to insert data chunk.\n-------------------\nStart query:\n" + query + "\n-------------------\nEnd query\n",
-                                    ex.Message, sw);
-                            }
-
-                            // End process file
-                            // ===============================================
-                            mutex.ReleaseMutex();
-                        }
-
-                        //Helpers.ExitWithError(ex.Message);
+                        Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
+                        Utils.Helpers.Log("Failed to insert data chunk.\n-------------------\nStart query:\n" + query + "\n-------------------\nEnd query\n", ex.Message);
                     }
 
                     // Close connection
@@ -498,6 +484,10 @@ namespace TecEnergyQuandl.Model.Quandl
             data[dateIndex] = myDate.ToString("yyyy-MM-dd HH:mm:ss");
         }
 
+        /**
+         * Formats extra columns for formatted insert.
+         * Detects column type by checking @data argument data type
+         */
         private string FormatExtraColumns(int fromNumber, QuandlDatasetData dataset)
         {
             string extraColumns = "";
@@ -522,6 +512,28 @@ namespace TecEnergyQuandl.Model.Quandl
             return extraColumns;
         }
 
+        /**
+         * Formats extra columns for formatted insert.
+         * Detects column type by checking it current postgres table data type
+         */
+        private string FormatExtraGeneratedColumns(int fromNumber, QuandlDatasetData dataset)
+        {
+            string extraColumns = "";
+
+            for (int i = 0; i < dataset.ColumnNames.Count; i++)
+            {
+                string column = dataset.ColumnNames.ElementAt(i);
+                extraColumns += ", " + PrepareExtraColumnFormated(column, fromNumber);
+                fromNumber++;
+            }
+
+            return extraColumns;
+        }
+
+        /**
+         * Prepares extra columns for formatted insert.
+         * Detects column type by checking @data argument data type
+         */
         private string PrepareExtraColumnFormated(dynamic data, string column, int number)
         {
             if (GetPostgresColumnType(data, column).ToLower() == "text")
@@ -529,6 +541,23 @@ namespace TecEnergyQuandl.Model.Quandl
             else if (GetPostgresColumnType(data, column).ToLower() == "timestamp")
                 return "to_timestamp('{" + number + "}', 'YYYY-MM-DD hh24:mi:ss')";
             else if (GetPostgresColumnType(data, column).ToLower() == "date")
+                return "to_date('{" + number + "}', 'YYYY-MM-DD')";
+            else
+                return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
+        }
+
+        /**
+         * Prepares extra columns for formatted insert.
+         * Detects column type by checking it current postgres table data type
+         */
+        private string PrepareExtraColumnFormated(string column, int number)
+        {
+            string columnType = GetPostgresColumnTypeFromPostgres(column).ToLower();
+            if (columnType  == "text")
+                return "'{" + number + "}'";
+            else if (columnType == "timestamp")
+                return "to_timestamp('{" + number + "}', 'YYYY-MM-DD hh24:mi:ss')";
+            else if (columnType == "date")
                 return "to_date('{" + number + "}', 'YYYY-MM-DD')";
             else
                 return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
@@ -636,34 +665,6 @@ namespace TecEnergyQuandl.Model.Quandl
             return "";
         }
 
-        //private string GetPostgresColumnType(string column)
-        //{
-        //    if (column.ToLower() == "date")
-        //        return "TIMESTAMP";
-        //    if (column.ToLower() == "value")
-        //        return "NUMERIC";
-        //    if (column.ToLower() == "open" ||
-        //        column.ToLower() == "high" ||
-        //        column.ToLower() == "low" ||
-        //        column.ToLower() == "close" ||
-        //        column.ToLower() == "volume" ||
-        //        column.ToLower() == "exdividend" ||
-        //        column.ToLower() == "splitratio" ||
-        //        column.ToLower() == "adjopen" ||
-        //        column.ToLower() == "adjhigh" ||
-        //        column.ToLower() == "adjlow" ||
-        //        column.ToLower() == "adjclose" ||
-        //        column.ToLower() == "adjustedclose" ||
-        //        column.ToLower() == "adjvolume" ||
-        //        column.ToLower() == "last" ||
-        //        column.ToLower() == "settle" ||
-        //        column.ToLower() == "prevdayopeninterest"
-        //        )
-        //        return "NUMERIC";
-
-        //    return "TEXT";
-        //}
-
         private static string GetPostgresColumnType(object data, string column)
         {
             Type type = data?.GetType() == null ? null : data?.GetType();
@@ -686,6 +687,51 @@ namespace TecEnergyQuandl.Model.Quandl
 
             else
                 return "TEXT";
+        }
+
+        /**
+         * Runs a query on postgres to the current dataset table model
+         * Gets the @column data type from the postgres table
+         */
+        private string GetPostgresColumnTypeFromPostgres(string column)
+        {
+            string postgresColumnType = "text";
+            using (var conn = new NpgsqlConnection(Constants.CONNECTION_STRING))
+            {
+                string query = @"SELECT format_type(atttypid, atttypmod) AS type
+                                FROM   pg_attribute
+                                WHERE  attrelid = 'quandl." + DatabaseCode + "'::regclass and attname = '" + column.ToLower() + @"'
+                                AND    attnum > 0
+                                AND    NOT attisdropped";
+                using (var cmd = new NpgsqlCommand(query))
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+                    cmd.Connection = conn;
+
+                    try
+                    {
+                        // Execute the query and obtain a result set
+                        NpgsqlDataReader dr = cmd.ExecuteReader();
+
+                        // Each row
+                        dr.Read();
+                        postgresColumnType = (string)dr["type"];
+                    }
+                    catch (Exception ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+
+            return postgresColumnType;
         }
 
         public static bool IsNumericType(Type o)

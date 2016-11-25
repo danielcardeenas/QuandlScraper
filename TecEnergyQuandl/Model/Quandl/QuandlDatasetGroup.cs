@@ -409,22 +409,8 @@ namespace TecEnergyQuandl.Model.Quandl
                     catch (PostgresException ex)
                     {
                         conn.Close();
-                        using (var mutex = new Mutex(false, "SHARED_INSERT_DATASETS"))
-                        {
-                            mutex.WaitOne();
-                            // Write
-                            // ===============================================
-                            using (StreamWriter sw = File.AppendText("log.txt"))
-                            {
-                                Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
-                                Utils.Helpers.Log("Failed to insert data chunk.\n-------------------\nStart query:\n" + query + "\n-------------------\nEnd query\n", 
-                                    ex.Message, sw);
-                            }
-
-                            // End process file
-                            // ===============================================
-                            mutex.ReleaseMutex();
-                        }
+                        Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
+                        Utils.Helpers.Log("Failed to insert data chunk.\n-------------------\nStart query:\n" + query + "\n-------------------\nEnd query\n", ex.Message);
 
                         //Helpers.ExitWithError(ex.Message);
                     }

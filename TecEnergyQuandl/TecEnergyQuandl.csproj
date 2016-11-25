@@ -59,6 +59,7 @@
     <Compile Include="Fetchers\FetchData.cs" />
     <Compile Include="Fetchers\FetchDatasets.cs" />
     <Compile Include="Fetchers\FetchDatatables.cs" />
+    <Compile Include="Model\Postgres\TableDescription.cs" />
     <Compile Include="Model\Quandl\QuandlColumn.cs" />
     <Compile Include="Model\Quandl\QuandlDataset.cs" />
     <Compile Include="Model\Quandl\QuandlDatasetData.cs" />

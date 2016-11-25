@@ -89,17 +89,7 @@ namespace TecEnergyQuandl
                         JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
                     pagesSum++;
-                    using (var mutex = new Mutex(false, "SHARED_FETCH_DATASETS"))
-                    {
-                        mutex.WaitOne();
-                        // Start process
-                        // ===============================================
-                        Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
-
-                        // End process
-                        // ===============================================
-                        mutex.ReleaseMutex();
-                    }
+                    Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
 
                     // Add it to its own group
                     datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
@@ -120,10 +110,7 @@ namespace TecEnergyQuandl
                     }
 
                     // Log
-                    using (StreamWriter sw = File.AppendText("log.txt"))
-                    {
-                        Utils.Helpers.Log("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message, sw);
-                    }
+                    Utils.Helpers.Log("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message);
 
                     // Add error to inform and log later
                     errors.Add(new Tuple<string, string> ("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message));
@@ -149,17 +136,7 @@ namespace TecEnergyQuandl
                         JsonConvert.DeserializeObject<DatasetsResponse>(json, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
                     pagesSum++;
-                    using (var mutex = new Mutex(false, "SHARED_LOG_DATASETS"))
-                    {
-                        mutex.WaitOne();
-                        // Start process
-                        // ===============================================
-                        Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
-
-                        // End process
-                        // ===============================================
-                        mutex.ReleaseMutex();
-                    }
+                    Utils.ConsoleInformer.PrintProgress("1B", "Fetching datasets [" + database.DatabaseCode + "]: ", Utils.Helpers.GetPercent(pagesSum, response.Meta.TotalPages).ToString() + "%");
 
                     // Add it to its own group
                     //datasetsGroups.Find(d => d.DatabaseCode == database.DatabaseCode).Datasets.AddRange(response.Datasets);
@@ -178,10 +155,7 @@ namespace TecEnergyQuandl
                     }
 
                     // Log
-                    using (StreamWriter sw = File.AppendText("log.txt"))
-                    {
-                        Utils.Helpers.Log("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message, sw);
-                    }
+                    Utils.Helpers.Log("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message);
 
                     // Add error to inform and log later
                     errors.Add(new Tuple<string, string>("Failed to fetch page: " + page + " from Database: [" + database.DatabaseCode + "]", "Ex: " + e.Message));

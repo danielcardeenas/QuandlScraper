@@ -55,10 +55,7 @@ namespace TecEnergyQuandl.Fetchers
                 foreach (var error in errors)
                 {
                     // Write
-                    using (StreamWriter sw = File.AppendText("log.txt"))
-                    {
-                        Utils.Helpers.Log(error.Item1, error.Item2, sw);
-                    }
+                    Utils.Helpers.Log(error.Item1, error.Item2);
                 }
             }
 
