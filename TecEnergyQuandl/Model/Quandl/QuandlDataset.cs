@@ -99,7 +99,8 @@ namespace TecEnergyQuandl.Model.Quandl
                                 Type,
                                 Premium,
                                 DatabaseId,
-                                Import";
+                                Import,
+                                date_insert";
 
             return columns;
         }
@@ -118,7 +119,8 @@ namespace TecEnergyQuandl.Model.Quandl
                                 [].Type,
                                 [].Premium,
                                 [].DatabaseId,
-                                [].Import";
+                                [].Import,
+                                [].date_insert";
 
             return columns.Replace("[]", suffix);
         }

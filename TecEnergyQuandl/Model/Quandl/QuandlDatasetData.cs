@@ -42,7 +42,8 @@ namespace TecEnergyQuandl.Model.Quandl
                                 DatabaseCode,
                                 Name,
                                 Transform,
-                                DatabaseId," +
+                                DatabaseId,
+                                date_insert," +
                                 // Column names [specific data]
                                 MakeDatasetsExtraColumns();
 

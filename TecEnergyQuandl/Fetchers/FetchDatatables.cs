@@ -66,7 +66,7 @@ namespace TecEnergyQuandl.Fetchers
 
         private static DatatableResponse DownloadDatatable(QuandlDatatable datatable)
         {
-            using (PacientWebClient client = new PacientWebClient())
+            using (PatientWebClient client = new PatientWebClient())
             {
                 try
                 {

@@ -85,7 +85,7 @@ namespace TecEnergyQuandl.Model.Quandl
             if (to > Data.Count)
                 to = Data.Count;
 
-            string query = @"WITH data(" + GetColumnsCommaSeparated() + @") as ( values";
+            string query = @"WITH data(" + GetColumnsCommaSeparated() + @", date_insert) as ( values";
             //string query = "";
             for (int i = from; i < to; i++)
             {
@@ -95,7 +95,7 @@ namespace TecEnergyQuandl.Model.Quandl
                 data = data.PrepareForPostgres(Columns);
 
                 // Base insert
-                query += String.Format("(" + GetColumnsFormatted() + ")", data);
+                query += String.Format("(" + GetColumnsFormatted() + ", date_trunc('second',current_timestamp))", data);
                 query += ",";
             }
 
@@ -103,8 +103,8 @@ namespace TecEnergyQuandl.Model.Quandl
             query = query.Remove(query.Length - 1);
             query += ")\n"; // Close (values ... ) 
 
-            query += @"INSERT INTO quandl.""" + Name + @""" (" + GetColumnsCommaSeparated() + ")" +
-                    " SELECT " + GetColumnsCommaSeparated() +
+            query += @"INSERT INTO quandl.""" + Name + @""" (" + GetColumnsCommaSeparated() + ", date_insert)" +
+                    " SELECT " + GetColumnsCommaSeparated() + ", date_insert" +
                     " FROM data";
                     //" WHERE NOT EXISTS (SELECT 1 FROM quandl.datasets ds WHERE ds.Id = data.Id)";
 

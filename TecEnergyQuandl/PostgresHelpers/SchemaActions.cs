@@ -115,7 +115,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                                        Premium          BOOL    DEFAULT FALSE,
                                        Image            TEXT,
                                        Favorite         BOOL    DEFAULT FALSE,
-                                       Import           BOOL    DEFAULT FALSE
+                                       Import           BOOL    DEFAULT FALSE,
+                                       date_insert      timestamptz
                                     );";
 
                     cmd.Connection = conn;
@@ -126,6 +127,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
+                            createDateInsertColumnIfNeeded("quandl.Databases");
                             ConsoleInformer.Inform("QuandlDatabases table already exists. Using it");
                             //cmd.CommandText = "TRUNCATE TABLE databases";
                             //try { cmd.ExecuteNonQuery(); }
@@ -169,7 +171,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                                         Type                 TEXT,
                                         Premium              BOOL    DEFAULT FALSE,
                                         DatabaseId           BIGINT,
-                                        Import               BOOL    DEFAULT FALSE
+                                        Import               BOOL    DEFAULT FALSE,
+                                        date_insert          timestamptz
                                     );";
 
                     cmd.Connection = conn;
@@ -180,6 +183,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
+                            createDateInsertColumnIfNeeded("quandl.datasets");
                             ConsoleInformer.Inform("Datasets table model already exists. Using it");
                         }
                         else { conn.Close(); Helpers.ExitWithError(ex.Message); }
@@ -215,7 +219,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                                         DatabaseCode         TEXT,
                                         Name                 TEXT    NOT NULL,
                                         Transform            TEXT,
-                                        DatabaseId           BIGINT," +
+                                        DatabaseId           BIGINT,
+                                        date_insert          timestamptz," +
                                         // Column names [specific data]
                                         //datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
                                         "PRIMARY KEY(" + string.Join(", ", datasetGroup.PrimaryKeys()) + @") 
@@ -229,6 +234,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
+                            createDateInsertColumnIfNeeded("quandl." + datasetGroup.DatabaseCode);
                             ConsoleInformer.Inform("Table model [" + datasetGroup.DatabaseCode + "] already exists. Using it");
                         }
                         else { conn.Close(); Helpers.ExitWithError(ex.Message); }
@@ -264,7 +270,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                                         DatabaseCode         TEXT,
                                         Name                 TEXT    NOT NULL,
                                         Transform            TEXT,
-                                        DatabaseId           BIGINT," +
+                                        DatabaseId           BIGINT,
+                                        date_insert          timestamptz," +
                                         // Column names [specific data]
                                         //datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
                                         datasetGroup.MakePrimaryKeysForCreate() + @",
@@ -279,6 +286,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
+                            createDateInsertColumnIfNeeded("quandl." + datasetGroup.DatabaseCode);
                             ConsoleInformer.Inform("Table model [" + datasetGroup.DatabaseCode + "] already exists. Using it");
                         }
                         else { conn.Close(); Helpers.ExitWithError(ex.Message); }
@@ -307,7 +315,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                     // Query
                     string query = @"CREATE TABLE quandl.datatables(
                                        Name             TEXT    PRIMARY KEY NOT NULL,
-                                       Import           BOOL    DEFAULT FALSE
+                                       Import           BOOL    DEFAULT FALSE,
+                                       date_insert      timestamptz
                                     );";
 
                     cmd.Connection = conn;
@@ -318,6 +327,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
+                            createDateInsertColumnIfNeeded("quandl.datatables");
                             ConsoleInformer.Inform("QuandlDatatables table already exists. Using it");
                             //cmd.CommandText = "TRUNCATE TABLE databases";
                             //try { cmd.ExecuteNonQuery(); }
@@ -357,7 +367,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                     // Query
                     string query = @"CREATE TABLE quandl.""" + datatable.Name + @"""(" +
                                         // Column names [specific data]
-                                        datatable.MakeExtraColumnsWithDataType() + @"
+                                        datatable.MakeExtraColumnsWithDataType() + @",
+                                        date_insert          timestamptz
                                     );";
 
                     cmd.Connection = conn;
@@ -368,6 +379,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                         //Console.WriteLine(ex.Message);
                         if (ex.SqlState == "42P07")
                         {
+                            createDateInsertColumnIfNeeded(@"quandl.""" + datatable.Name + @"""");
                             ConsoleInformer.Inform("Table model [" + datatable.Name + "] already exists. Truncating...");
                             cmd.CommandText = @"TRUNCATE TABLE quandl.""" + datatable.Name + @"""";
                             try { cmd.ExecuteNonQuery(); }
@@ -377,6 +389,48 @@ namespace TecEnergyQuandl.PostgresHelpers
                     }
 
                     ConsoleInformer.PrintProgress("3D", "[" + datatable.Name + "] Creating table model: ", "100%");
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+        }
+
+        // Adds extra column (date_insert)
+        private static void createDateInsertColumnIfNeeded(string tableName)
+        {
+            //string tableName = "quandl." + DatabaseCode;
+            string columnType = "timestamptz";
+            var _column = "date_insert";
+            string query = @"DO $$ 
+                                BEGIN
+                                    BEGIN
+                                        ALTER TABLE " + tableName + " ADD COLUMN " + _column + " " + columnType + @";
+                                    EXCEPTION 
+                                        WHEN duplicate_column THEN 
+                                            RAISE NOTICE 'Has needed type.';
+                                    END;
+                                END;
+                            $$";
+
+            //Execute query
+            using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand())
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+
+                    cmd.Connection = conn;
+                    cmd.CommandText = query;
+                    try { cmd.ExecuteNonQuery(); }
+                    catch (PostgresException ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
 
                     // Close connection
                     // ===============================================================

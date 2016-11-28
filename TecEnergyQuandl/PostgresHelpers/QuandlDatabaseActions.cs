@@ -91,11 +91,11 @@ namespace TecEnergyQuandl.PostgresHelpers
             // Reference last item
             var last = databases.Last();
 
-            string query = @"WITH data(id, name, databasecode, description, datasetscount, downloads, premium, image, favorite) as ( values";
+            string query = @"WITH data(id, name, databasecode, description, datasetscount, downloads, premium, image, favorite, date_insert) as ( values";
             //string query = "INSERT INTO quandl.databases(id, name, databasecode, description, datasetscount, downloads, premium, image, favorite) VALUES ";
             foreach (QuandlDatabase item in databases)
             {
-                query += String.Format(@"({0}, '{1}', '{2}', '{3}', {4}, {5}, {6}, '{7}', {8})",
+                query += String.Format(@"({0}, '{1}', '{2}', '{3}', {4}, {5}, {6}, '{7}', {8}, date_trunc('second', current_timestamp))",
                                     item.Id, item.Name, item.DatabaseCode, item.Description, item.DatasetsCount, item.Downloads, item.Premium, item.Image, item.Favorite);
 
                 if (item != last)
@@ -104,8 +104,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                     query += ")";
             }
 
-            query += "\nINSERT INTO quandl.databases (id, name, databasecode, description, datasetscount, downloads, premium, image, favorite)" +
-                    " SELECT distinct on (id) id, name, databasecode, description, datasetscount, downloads, premium, image, favorite" +
+            query += "\nINSERT INTO quandl.databases (id, name, databasecode, description, datasetscount, downloads, premium, image, favorite, date_insert)" +
+                    " SELECT distinct on (id) id, name, databasecode, description, datasetscount, downloads, premium, image, favorite, date_insert" +
                     " FROM data" +
                     " WHERE NOT EXISTS (SELECT 1 FROM quandl.databases ds WHERE ds.Id = data.Id)";
             return query;

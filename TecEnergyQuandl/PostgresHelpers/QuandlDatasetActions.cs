@@ -64,7 +64,7 @@ namespace TecEnergyQuandl.PostgresHelpers
             FileInfo file = new FileInfo(queryFilePath);
             string query = file.OpenText().ReadToEnd();
 
-            using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
+            using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING) )
             {
                 using (var cmd = new NpgsqlCommand())
                 {
@@ -207,6 +207,7 @@ namespace TecEnergyQuandl.PostgresHelpers
             return datasetNewestDateList;
         }
 
+        // Not used anymore
         public static void InsertQuandlDatasetsData(List<QuandlDatasetDataGroup> datasetsGroups)
         {
             // Make datasets model tables

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TecEnergyQuandl.Utils
 {
-    class PacientWebClient : WebClient
+    class PatientWebClient : WebClient
     {
         protected override WebRequest GetWebRequest(Uri uri)
         {

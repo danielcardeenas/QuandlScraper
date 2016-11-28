@@ -34,16 +34,17 @@ namespace TecEnergyQuandl
 
             // 3. Download datasets data
             //  Only from the datasets selected in quandl.datasets (import = true)
-            await BeginDownloadDatasetsData();
+            //await BeginDownloadDatasetsData();
 
             // 4. Download datatables
-            //BeginDownloadDatatables();
+            BeginDownloadDatatables();
         }
 
         public static async Task BeginDownloadDatabases()
         {
             // Only needed first run
-            // Or if you want to reset quandl databases
+            // Dont skip this part if this table still does not has 'date_insert' column
+            // Cause this step is going to add
             PostgresHelpers.SchemaActions.MakeDatabase();
             Console.WriteLine("\n");
 

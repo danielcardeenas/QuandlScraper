@@ -88,7 +88,7 @@ namespace TecEnergyQuandl
 
         private static async Task DownloadDatasetDataAsync(QuandlDataset dataset, int to)
         {
-            using (PacientWebClient client = new PacientWebClient())
+            using (PatientWebClient client = new PatientWebClient())
             {
                 try
                 {

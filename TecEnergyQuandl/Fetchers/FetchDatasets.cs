@@ -72,7 +72,7 @@ namespace TecEnergyQuandl
             }
 
             // Manipulate data into database
-            Console.WriteLine("\nInserting data into database\n---------------------------------------");
+            //Console.WriteLine("\nInserting data into database\n---------------------------------------");
 
             // Make datasets list
            //PostgresHelpers.QuandlDatasetActions.InsertQuandlDatasets(datasetsGroups);
@@ -80,7 +80,7 @@ namespace TecEnergyQuandl
 
         private static DatasetsResponse DownloadDataset(int page, QuandlDatabase database)
         {
-            using (PacientWebClient client = new PacientWebClient())
+            using (PatientWebClient client = new PatientWebClient())
             {
                 try
                 {
@@ -127,7 +127,7 @@ namespace TecEnergyQuandl
 
         private static async Task DownloadDatasetsAsync(int page, QuandlDatabase database)
         {
-            using (PacientWebClient client = new PacientWebClient())
+            using (PatientWebClient client = new PatientWebClient())
             {
                 try
                 {

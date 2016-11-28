@@ -92,6 +92,7 @@ namespace TecEnergyQuandl.Model.Quandl
         }
 
         // Creates query to insert dataset
+        // Not used
         public void MakeInsertQuery()
         {
             // Data elements to be formated for each thread
@@ -352,7 +353,7 @@ namespace TecEnergyQuandl.Model.Quandl
                 object[] data = dataset.Data[i];
 
                 // Base insert
-                query += String.Format(@"('{0}', '{1}', '{2}', '{3}', {4}",
+                query += String.Format(@"('{0}', '{1}', '{2}', '{3}', {4}, date_trunc('second', current_timestamp)",
                                 dataset.DatasetCode, dataset.DatabaseCode, dataset.Name, // 0 - 2
                                 dataset.Transform, // 3
                                 dataset.DatabaseId); // 4

@@ -47,10 +47,10 @@ namespace TecEnergyQuandl.PostgresHelpers
             // Reference last item
             var last = Utils.Constants.DATATABLES.Last();
 
-            string query = @"WITH data(name, import) as ( values";
+            string query = @"WITH data(name, import, date_insert) as ( values";
             foreach (string item in Utils.Constants.DATATABLES)
             {
-                query += String.Format(@"('{0}', {1})",
+                query += String.Format(@"('{0}', {1}, date_trunc('second',current_timestamp))",
                                     item, "false");
 
                 if (item != last)
@@ -59,8 +59,8 @@ namespace TecEnergyQuandl.PostgresHelpers
                     query += ")";
             }
 
-            query += "\nINSERT INTO quandl.datatables (name, import)" +
-                    " SELECT distinct on (name) name, import" +
+            query += "\nINSERT INTO quandl.datatables (name, import, date_insert)" +
+                    " SELECT distinct on (name) name, import, date_insert" +
                     " FROM data" +
                     " WHERE NOT EXISTS (SELECT 1 FROM quandl.datatables dt WHERE dt.name = data.name)";
             return query;
