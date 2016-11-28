@@ -199,7 +199,7 @@ namespace TecEnergyQuandl.Model.Quandl
             {
                 int fromIndex = from;
                 int toIndex = fromIndex + elementsPerThread;
-                tasks.Add(Task.Factory.StartNew(() => CreatePartialQuery(fromIndex, toIndex)));
+                tasks.Add(Task.Factory.StartNew(() => CreatePartialUpsertQuery(fromIndex, toIndex)));
 
                 from += elementsPerThread;
             }
@@ -293,6 +293,61 @@ namespace TecEnergyQuandl.Model.Quandl
             catch (Exception ex) { }
         }
 
+        private void CreatePartialUpsertQuery(int from, int to)
+        {
+            CreatePartialUpdateQuery(from, to);
+            CreatePartialQuery(from, to);
+        }
+
+        private void CreatePartialUpdateQuery(int from, int to)
+        {
+            if (to > Datasets.Count)
+                to = Datasets.Count;
+  
+            string query = "";
+            for (int i = from; i < to; i++)
+            {
+                // Current
+                QuandlDataset item = Datasets[i];
+
+                // Base insert
+                query += String.Format("update quandl.datasets set " +
+                                       "NewestAvailableDate = to_date('{0}', 'YYYY-MM_DD'), " +
+                                       "OldestAvailableDate = to_date('{1}', 'YYYY-MM_DD'), " +
+                                       "date_insert = date_trunc('second', current_timestamp)" +
+                                       "where id = {2}",
+                    item.NewestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"), 
+                    item.OldestAvailableDate.GetValueOrDefault(DateTime.Now).ToString("yyyy-MM-dd"),
+                    item.Id);
+
+                query += ";\n";
+            }
+
+            //Execute query
+            using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
+            {
+                using (var cmd = new NpgsqlCommand())
+                {
+                    // Open connection
+                    // ===============================================================
+                    conn.Open();
+
+                    cmd.Connection = conn;
+                    cmd.CommandText = query;
+                    try { cmd.ExecuteNonQuery(); }
+                    catch (PostgresException ex)
+                    {
+                        conn.Close();
+                        Helpers.ExitWithError(ex.Message);
+                    }
+
+                    // Close connection
+                    // ===============================================================
+                    conn.Close();
+                }
+            }
+        }
+
         private void CreatePartialQuery(int from, int to)
         {
             if (to > Datasets.Count)
@@ -323,7 +378,7 @@ namespace TecEnergyQuandl.Model.Quandl
             query += "\nINSERT INTO quandl.datasets (" + QuandlDataset.GetColumnsForQuery() + ")" +
                     " SELECT " + QuandlDataset.GetColumnsForQuery() +
                     " FROM data" +
-                    " WHERE NOT EXISTS (SELECT 1 FROM quandl.datasets ds WHERE ds.Id = data.Id)";
+                    " WHERE NOT EXISTS (SELECT 1 FROM quandl.datasets ds WHERE ds.Id = data.Id);";
 
             //Execute query
             using (var conn = new NpgsqlConnection(Utils.Constants.CONNECTION_STRING))
