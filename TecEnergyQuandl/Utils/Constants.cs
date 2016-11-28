@@ -8,7 +8,7 @@ namespace TecEnergyQuandl.Utils
 {
     public class Constants
     {
-        public static string API_KEY = "qsoHq8dWs24kyT8pEDSy";
+        public static string API_KEY = "qsaRqfTWs23FyT8pEDSy";
         public static string DATABASES_URL = "https://www.quandl.com/api/v3/databases.json";
 
         // Postgres stuff
