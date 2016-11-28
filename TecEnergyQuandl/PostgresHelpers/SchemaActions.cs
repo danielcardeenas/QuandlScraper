@@ -220,7 +220,7 @@ namespace TecEnergyQuandl.PostgresHelpers
                                         Name                 TEXT    NOT NULL,
                                         Transform            TEXT,
                                         DatabaseId           BIGINT,
-                                        date_insert          timestamptz," +
+                                        date_insert          timestamptz" +
                                         // Column names [specific data]
                                         //datasetGroup.MakeDatasetsExtraColumnsWithDataType() + @",
                                         "PRIMARY KEY(" + string.Join(", ", datasetGroup.PrimaryKeys()) + @") 

@@ -543,6 +543,8 @@ namespace TecEnergyQuandl.Model.Quandl
                 return "to_timestamp('{" + number + "}', 'YYYY-MM-DD hh24:mi:ss')";
             else if (GetPostgresColumnType(data, column).ToLower() == "date")
                 return "to_date('{" + number + "}', 'YYYY-MM-DD')";
+            else if (GetPostgresColumnType(data, column).ToLower() == "as_of")
+                return "to_date('{" + number + "}', 'YYYY-MM-DD')";
             else
                 return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
         }
@@ -558,7 +560,7 @@ namespace TecEnergyQuandl.Model.Quandl
                 return "'{" + number + "}'";
             else if (columnType == "timestamp")
                 return "to_timestamp('{" + number + "}', 'YYYY-MM-DD hh24:mi:ss')";
-            else if (columnType == "date")
+            else if (columnType == "date" || columnType == "as_of")
                 return "to_date('{" + number + "}', 'YYYY-MM-DD')";
             else
                 return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
@@ -678,6 +680,9 @@ namespace TecEnergyQuandl.Model.Quandl
                 return "BOOL";
             if (Type.GetTypeCode(type) == TypeCode.String
                 && column.ToLower() == "date")
+                return "DATE";
+            if (Type.GetTypeCode(type) == TypeCode.String
+                && column.ToLower() == "as_of")
                 return "DATE";
             if (Type.GetTypeCode(type) == TypeCode.String
                 && column.ToLower() == "timestamp")

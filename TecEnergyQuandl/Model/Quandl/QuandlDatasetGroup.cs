@@ -45,7 +45,7 @@ namespace TecEnergyQuandl.Model.Quandl
             List<string> primaryKeys = new List<string>();
 
             if (HasColumnDate())
-                primaryKeys.Add("date");
+                primaryKeys.Add(GetColumnDate());
 
             primaryKeys.Add("datasetcode");
 
@@ -54,7 +54,7 @@ namespace TecEnergyQuandl.Model.Quandl
 
         public string MakePrimaryKeysForCreate()
         {
-            string query = "\ndate\t\tdate,";
+            string query = "\n" + GetColumnDate() + "\t\tdate,";
 
             // Return without the last comma ","
             return query.Remove(query.Length - 1);
@@ -161,7 +161,17 @@ namespace TecEnergyQuandl.Model.Quandl
 
         public bool HasColumnDate()
         {
-            return ColumnNames().FirstOrDefault(x => x.ToLower() == "date") != null;
+            return ColumnNames().FirstOrDefault(x => 
+            x.ToLower() == "date" ||
+            x.ToLower() == "as_of") != null;
+        }
+
+        public string GetColumnDate()
+        {
+            if (ColumnNames().FirstOrDefault(x => x.ToLower() == "as_of") != null)
+                return "as_of";
+            else
+                return "date";
         }
 
         private int GetThreadsNeeded(int dataCount, int elementsPerThread)

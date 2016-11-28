@@ -148,7 +148,7 @@ namespace TecEnergyQuandl.PostgresHelpers
             return datasetsGroups;
         }
 
-        // Detects the newest data date
+        // Detects the most recent data date
         // Returns a list of pairs:
         //  [date, datasetcode]
         //  Ex. ['2016-10-21', 'AAPL']
