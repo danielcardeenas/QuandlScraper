@@ -92,11 +92,9 @@ namespace TecEnergyQuandl
             {
                 try
                 {
-                    //string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode +
-                    //                                                        "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY +
-                    //                                                        "&start_date=" + dataset.LastFetch.GetValueOrDefault(DateTime.MinValue).AddDays(1).ToString("yyyy-MM-dd"))); // Add one day because I dont want to include the current newest in the json
-
-                    string data = await client.DownloadStringTaskAsync(new Uri("https://api.myjson.com/bins/xcn1"));
+                    string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode +
+                                                                            "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY +
+                                                                            "&start_date=" + dataset.LastFetch.GetValueOrDefault(DateTime.MinValue).AddDays(1).ToString("yyyy-MM-dd"))); // Add one day because I dont want to include the current newest in the json
                     DataResponse response =
                             JsonConvert.DeserializeObject<DataResponse>(data, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
