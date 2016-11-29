@@ -39,13 +39,12 @@ namespace TecEnergyQuandl.Model.Quandl
             List<string> primaryKeys = new List<string>();
 
             if (HasColumnDate())
-                primaryKeys.Add("date");
+                primaryKeys.Add(GetColumnDate());
 
             primaryKeys.Add("datasetcode");
 
             return primaryKeys.ToArray();
         }
-
         // Creates query to insert dataset
         public string MakeInsertQueryFile()
         {
@@ -148,7 +147,17 @@ namespace TecEnergyQuandl.Model.Quandl
 
         public bool HasColumnDate()
         {
-            return ColumnNames().FirstOrDefault(x => x.ToLower() == "date") != null;
+            return ColumnNames().FirstOrDefault(x =>
+            x.ToLower() == "date" ||
+            x.ToLower() == "as_of") != null;
+        }
+
+        public string GetColumnDate()
+        {
+            if (ColumnNames().FirstOrDefault(x => x.ToLower() == "as_of") != null)
+                return "as_of";
+            else
+                return "date";
         }
 
         private int GetThreadsNeeded(int dataCount, int elementsPerThread)
@@ -378,7 +387,7 @@ namespace TecEnergyQuandl.Model.Quandl
             {
                 query += @" WHERE NOT EXISTS (
                             SELECT 1 FROM quandl." + DatabaseCode + @" ds 
-                                WHERE ds.date = data.date AND
+                                WHERE ds." + GetColumnDate() + @" = data." + GetColumnDate() + @" AND
                                       ds.datasetcode = data.datasetcode
                             )";
             }
@@ -480,7 +489,7 @@ namespace TecEnergyQuandl.Model.Quandl
 
         private void MakeDateTimeStamp(ref object[] data)
         {
-            var dateIndex = ColumnNames().FindIndex(a => a.ToLower() == "date");
+            var dateIndex = ColumnNames().FindIndex(a => a.ToLower() == GetColumnDate());
             DateTime myDate = DateTime.Parse(data[dateIndex].ToString());
             data[dateIndex] = myDate.ToString("yyyy-MM-dd HH:mm:ss");
         }

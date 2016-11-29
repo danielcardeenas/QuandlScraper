@@ -157,7 +157,7 @@ namespace TecEnergyQuandl.PostgresHelpers
         public static List<Tuple<DateTime, string>> GetNewestImportedData(QuandlDatasetGroup datasetGroup)
         {
             // Query
-            string query = @"SELECT max(date) as date, datasetcode 
+            string query = @"SELECT max(" + datasetGroup.GetColumnDate() + @") as date, datasetcode 
                             FROM quandl." + datasetGroup.DatabaseCode + @" 
                             GROUP BY datasetcode";
 

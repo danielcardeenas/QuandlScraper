@@ -454,7 +454,7 @@ namespace TecEnergyQuandl.Model.Quandl
             {
                 query += @" WHERE NOT EXISTS (
                             SELECT 1 FROM quandl." + DatabaseCode + @" ds 
-                                WHERE ds.date = data.date AND
+                                WHERE ds." + GetColumnDate() + @" = data." + GetColumnDate() + @" AND
                                       ds.datasetcode = data.datasetcode
                             )";
             }
@@ -489,7 +489,7 @@ namespace TecEnergyQuandl.Model.Quandl
 
         private void MakeDateTimeStamp(ref object[] data)
         {
-            var dateIndex = ColumnNames().FindIndex(a => a.ToLower() == "date");
+            var dateIndex = ColumnNames().FindIndex(a => a.ToLower() == GetColumnDate());
             DateTime myDate = DateTime.Parse(data[dateIndex].ToString());
             data[dateIndex] = myDate.ToString("yyyy-MM-dd HH:mm:ss");
         }
@@ -525,6 +525,8 @@ namespace TecEnergyQuandl.Model.Quandl
             else if (GetPostgresColumnType(data, column).ToLower() == "timestamp")
                 return "to_timestamp('{" + number + "}', 'YYYY-MM-DD hh24:mi:ss')";
             else if (GetPostgresColumnType(data, column).ToLower() == "date")
+                return "to_date('{" + number + "}', 'YYYY-MM-DD')";
+            else if (GetPostgresColumnType(data, column).ToLower() == "as_of")
                 return "to_date('{" + number + "}', 'YYYY-MM-DD')";
             else
                 return "cast(coalesce(nullif('{" + number + "}',''),null) as float)";
@@ -678,6 +680,9 @@ namespace TecEnergyQuandl.Model.Quandl
                 return "BOOL";
             if (Type.GetTypeCode(type) == TypeCode.String
                 && column.ToLower() == "date")
+                return "DATE";
+            if (Type.GetTypeCode(type) == TypeCode.String
+                && column.ToLower() == "as_of")
                 return "DATE";
             if (Type.GetTypeCode(type) == TypeCode.String
                 && column.ToLower() == "timestamp")
