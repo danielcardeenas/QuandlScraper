@@ -19,15 +19,21 @@ namespace TecEnergyQuandl
         private static List<QuandlDatasetGroup> datasetsGroups;
         private static List<QuandlDatasetDataGroup> datasetsDataGroups = new List<QuandlDatasetDataGroup>();
         private static List<Tuple<string, string>> errors = new List<Tuple<string, string>>();
+        private static List<QuandlDatasetGroup> failedToFetch = new List<QuandlDatasetGroup>();
 
         private static int datasetsFetched = 0;
         private static bool blocked = false;
+
         public static async Task BeginDownloadData()
         {
             // Download first page and check meta
             Console.WriteLine("Fetching datasets\n---------------------------------------");
             datasetsGroups = PostgresHelpers.QuandlDatasetActions.GetImportedDatasets();
+            await StartFetching();
+        }
 
+        private static async Task StartFetching()
+        {
             Console.WriteLine("\nSelected datasets models - quantity:");
             datasetsGroups.ForEach(d =>
                 Console.WriteLine(" -[DB Model] " + d.DatabaseCode + " - " + d.Datasets.Count)
@@ -67,10 +73,28 @@ namespace TecEnergyQuandl
                 await DownloadDatasetsDataAsync(datasetGroup, datasetGroup.Datasets.Count);
             }
 
-            // Check errors
-            if (errors.Count > 0)
+            if (failedToFetch.Any())
             {
-                Utils.ConsoleInformer.Inform("Some unexpected stuff happened. See the log for more info");
+                datasetsGroups.Clear();
+                datasetsGroups.AddRange(failedToFetch);
+
+                Console.WriteLine("\n######################################################################");
+                Console.WriteLine("\nFetching failed datasets data");
+                Console.WriteLine("Waiting 11 minutes (quandl limitation) before fetching remaning ones");
+
+                for (int totalSeconds = 11 * 60; totalSeconds >= 0; totalSeconds--)
+                {
+                    int seconds = totalSeconds % 60;
+                    int minutes = totalSeconds / 60;
+                    string time = minutes + ":" + seconds;
+
+                    Console.CursorLeft = 0;
+                    Console.Write("{0} ", time);    // Add space to make sure to override previous contents
+                    System.Threading.Thread.Sleep(1000);
+                }
+
+                failedToFetch.Clear();
+                await StartFetching();
             }
 
             // Make datasets model tables
@@ -95,6 +119,7 @@ namespace TecEnergyQuandl
                     string data = await client.DownloadStringTaskAsync(new Uri("https://www.quandl.com/api/v3/datasets/" + dataset.DatabaseCode +
                                                                             "/" + dataset.DatasetCode + "/data.json?api_key=" + Utils.Constants.API_KEY +
                                                                             "&start_date=" + dataset.LastFetch.GetValueOrDefault(DateTime.MinValue).AddDays(1).ToString("yyyy-MM-dd"))); // Add one day because I dont want to include the current newest in the json
+
                     DataResponse response =
                             JsonConvert.DeserializeObject<DataResponse>(data, new JsonSerializerSettings { ContractResolver = Utils.Converters.MakeUnderscoreContract() });
 
@@ -116,16 +141,24 @@ namespace TecEnergyQuandl
                 }
                 catch (Exception e)
                 {
-                    if (e.Message.Contains("(429)") && !blocked)
+                    // Add to fetch later (Create datasetgroup if doesnt exists in failed list)
+                    if (!failedToFetch.Exists(d => d.DatabaseCode == dataset.DatabaseCode))
+                        failedToFetch.Add(new QuandlDatasetGroup() { DatabaseCode = dataset.DatabaseCode, Datasets = new List<QuandlDataset>() });
+
+                    failedToFetch.Find(d => d.DatabaseCode == dataset.DatabaseCode).Datasets.Add(dataset);
+
+                    if (e.Message.Contains("(429)"))
                     {
-                        Utils.ConsoleInformer.Inform("Looks like quandl just blocked you");
+                        // Print only once
+                        if (!blocked)
+                            Utils.ConsoleInformer.Inform("Looks like quandl just blocked you");
+
                         blocked = true;
                     }
 
                     // Log
-                    Utils.Helpers.Log("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message);
-
-                    errors.Add(new Tuple<string, string>("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message));
+                    Utils.Helpers.Log("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "] Will try to recover", "Ex: " + e.Message);
+                    //errors.Add(new Tuple<string, string>("Failed to fetch data: from dataset: [" + dataset.DatabaseCode + "/" + dataset.DatasetCode + "]", "Ex: " + e.Message));
                 }
             }
         }
