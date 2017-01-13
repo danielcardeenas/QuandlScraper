@@ -21,7 +21,7 @@ _Thats it. The program will handle by itself the creation of database/schemas/ta
   ```sql
   update quandl.databases set import = true where databasecode = 'WIKI';
   ```
-2. Program will download all datasets available from `WIKI` and istert them into **quandl.datasets** and then pause
+2. Program will download all datasets available from `WIKI` and insert them into **quandl.datasets** and then pause
   + Here you have to select the datasets in postgres by setting `import` to `true`. Example:
   ```sql
   update quandl.datasets set import = true where databasecode = 'WIKI' and datasetcode = 'AAPL';
