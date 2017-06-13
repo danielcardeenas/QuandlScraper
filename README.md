@@ -29,7 +29,7 @@ _Thats it. The program will handle by itself the creation of database/schemas/ta
   ```
 3. Program will download all the data available from `WIKI/AAPL` and `WIKI/FB`, dynamically creates table **quandl.wiki** and inserts all the data
 
-####**(Extra)** Usage for datatables
+#### **(Extra)** Usage for datatables
 1. Program will insert all datatables available and insert them into **quandl.datatables** (in a database named quandl in the postgres instance) and then pause
   + Here you have to select the datatables in postgres by setting `import` to `true`. Example: 
   ```sql
