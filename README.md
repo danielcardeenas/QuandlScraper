@@ -3,11 +3,11 @@ Downloads Quandl Data (Bulks) without a premium account and import it to a Postg
 
 Everything gets _structured N I C E L Y_
 
-###Dependecies
+### Dependecies
 + [Npgsql](http://www.npgsql.org/install.html)
 + [JSON.NET](http://www.newtonsoft.com/json)
 
-###Setup
+### Setup
 + In class: [`QuandlScraper/TecEnergyQuandl/Utils/Constants.cs`](https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Utils/Constants.cs)
   + Replace `API_KEY` with your Quandl api key
   + Replace `USER` with your Postgres user
@@ -15,7 +15,7 @@ Everything gets _structured N I C E L Y_
   
 _Thats it. The program will handle by itself the creation of database/schemas/tables etc.._
 
-###Usage
+### Usage
 1. Program will download all databases available and insert them into **quandl.databases** (in a database named quandl in the postgres instance) and then pause
   + Here you have to select the databases in postgres by setting `import` to `true`. Example: 
   ```sql
@@ -38,7 +38,7 @@ _Thats it. The program will handle by itself the creation of database/schemas/ta
   
 2. Program will download all the data available from `ZACKS/CP`, dynamically creates table **ZACKS/CP** and inserts all the data
 
-###Info
+### Info
 The program consists in 3 key tasks (4 if you count datatables fetch).
 Each one is independient from each other. So you can skip a task (commenting the code line) and the program will still run fine.
 
