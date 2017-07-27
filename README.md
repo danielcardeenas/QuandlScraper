@@ -42,9 +42,9 @@ _Thats it. The program will handle by itself the creation of database/schemas/ta
 The program consists in 3 key tasks (4 if you count datatables fetch).
 Each one is independient from each other. So you can skip a task (commenting the code line) and the program will still run fine.
 
-1. [Fetch Databases available] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L28)
-2. [Fetch Datasets available] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L32) <sub>(from selected databases downloaded in step 1)</sub>
-3. [Fetch Data] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L37) <sub>(from selected databases downloaded in step 2)</sub>
-4. [Fetch Datatables] (https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L40) **(Extra)** <sub>(from selected datatables downloaded)</sub>
+1. [Fetch Databases available](https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L28)
+2. [Fetch Datasets available](https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L32) <sub>(from selected databases downloaded in step 1)</sub>
+3. [Fetch Data](https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L37) <sub>(from selected databases downloaded in step 2)</sub>
+4. [Fetch Datatables](https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Program.cs#L40) **(Extra)** <sub>(from selected datatables downloaded)</sub>
 
 If something unexpected happens a file `log.txt` (inside same directory where the excutable is running) will be created with the information, however, the program will do his best to handle the error and keep working.
