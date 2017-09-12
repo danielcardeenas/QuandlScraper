@@ -3,9 +3,8 @@ Downloads Quandl Data (Bulks) without a premium account and import it to a Postg
 
 Everything gets _structured N I C E L Y_
 
-### Dependecies
-+ [Npgsql](http://www.npgsql.org/install.html)
-+ [JSON.NET](http://www.newtonsoft.com/json)
+### Dependencies
++ PostgreSQL (9.2 or later) must be installed
 
 ### Setup
 + In class: [`QuandlScraper/TecEnergyQuandl/Utils/Constants.cs`](https://github.com/danielcardeenas/QuandlScraper/blob/master/TecEnergyQuandl/Utils/Constants.cs)
