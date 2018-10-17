@@ -26,11 +26,11 @@ namespace TecEnergyQuandl
         private static async Task MainAsync()
         {
             // 1. Download databases available
-            //await BeginDownloadDatabases();
+            await BeginDownloadDatabases();
 
             // 2. Download datasets 
             //  Only the ones selected in quandl.databases (import = true)
-            //await BeginDownloadDatasets();
+            await BeginDownloadDatasets();
 
             // 3. Download datasets data
             //  Only from the datasets selected in quandl.datasets (import = true)
